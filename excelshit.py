@@ -68,6 +68,10 @@ for lane, idxs in column_mapping.items():
     ]
 
     lane_df["lane"] = lane
+    
+    if lane in {"R1", "R2", "R3", "R4"}:
+        lane_df[["start_chainage", "end_chainage"]] = lane_df[["end_chainage", "start_chainage"]]
+
 
     numeric_cols = [
         "start_chainage", "end_chainage",
