@@ -1,0 +1,96 @@
+import pandas as pd
+import json
+import time
+import orjson
+# --- Configuration ---
+file_path = r"resources\Comparison Delhi Vadodara Pkg 9 (Road Signage).xlsx"
+output_js_path = "segments.js"
+start = time.time()
+# Mapping of lanes to column index numbers
+# NOTE: You must update these index numbers to match your file (0-based)
+column_mapping = {
+    "L1": {
+        "start_lat": 5,   "start_lon": 6,   "end_lat": 7,   "end_lon": 8,
+        "roughness": 40,  "rutting": 48,    "cracking": 56, "ravelling": 64
+    },
+    "L2": {
+        "start_lat": 9,   "start_lon":10,   "end_lat":11,   "end_lon":12,
+        "roughness": 41,  "rutting": 49,    "cracking": 57, "ravelling": 65
+    },
+    "L3": {
+        "start_lat":13,   "start_lon":14,   "end_lat":15,   "end_lon":16,
+        "roughness": 42,  "rutting": 50,    "cracking": 58, "ravelling": 66
+    },
+    "L4": {
+        "start_lat":17,   "start_lon":18,   "end_lat":19,   "end_lon":20,
+        "roughness": 43,  "rutting": 51,    "cracking": 59, "ravelling": 67
+    },
+    "R1": {
+        "start_lat":21,   "start_lon":22,   "end_lat":23,   "end_lon":24,
+        "roughness": 44,  "rutting": 52,    "cracking": 60, "ravelling": 68
+    },
+    "R2": {
+        "start_lat":25,   "start_lon":26,   "end_lat":27,   "end_lon":28,
+        "roughness": 45,  "rutting": 53,    "cracking": 61, "ravelling": 69
+    },
+    "R3": {
+        "start_lat":29,   "start_lon":30,   "end_lat":31,   "end_lon":32,
+        "roughness": 46,  "rutting": 54,    "cracking": 62, "ravelling": 70
+    },
+    "R4": {
+        "start_lat":33,   "start_lon":34,   "end_lat":35,   "end_lon":36,
+        "roughness": 47,  "rutting": 55,    "cracking": 63, "ravelling": 71
+    },
+}
+
+# --- Data Processing ---
+df = pd.read_excel(file_path, header=2)
+
+all_segments = []
+
+for lane, idxs in column_mapping.items():
+    # Extract relevant columns by integer index
+    lane_df = df.iloc[:, [
+        idxs["start_lat"], idxs["start_lon"],
+        idxs["end_lat"], idxs["end_lon"],
+        idxs["roughness"], idxs["rutting"],
+        idxs["cracking"], idxs["ravelling"]
+    ]].copy()
+
+    # Rename columns to consistent names
+    lane_df.columns = [
+        "start_lat", "start_lon",
+        "end_lat", "end_lon",
+        "roughness", "rutting",
+        "cracking", "ravelling"
+    ]
+
+    lane_df["lane"] = lane
+
+    # Convert numeric columns safely
+    numeric_cols = ["start_lat", "start_lon", "end_lat", "end_lon",
+                    "roughness", "rutting", "cracking", "ravelling"]
+    lane_df[numeric_cols] = lane_df[numeric_cols].apply(pd.to_numeric, errors="coerce")
+
+    # Drop rows missing essential coordinates
+    lane_df.dropna(subset=["start_lat", "start_lon", "end_lat", "end_lon"], inplace=True)
+
+    # Create start and end coordinate arrays
+    lane_df["start"] = lane_df[["start_lat", "start_lon"]].values.tolist()
+    lane_df["end"] = lane_df[["end_lat", "end_lon"]].values.tolist()
+
+    # Columns for final JSON export
+    final_cols = ["lane", "start", "end", "roughness", "rutting", "cracking", "ravelling"]
+
+    all_segments.extend(lane_df[final_cols].to_dict("records"))
+
+# --- Write to JS file ---
+
+
+with open(output_js_path, "wb") as f:
+    f.write(b"const segments = ")
+    f.write(orjson.dumps(all_segments))
+    f.write(b";")
+
+end = time.time()
+print(f"✅ {output_js_path} generated successfully. in {end-start}")

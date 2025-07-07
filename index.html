@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NHAI Road Segments Map - All Metrics</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 90vh; }
+    #controls {
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>NHAI Road Segments Map</h1>
+  <div id="controls">
+    <label for="metricSelect">Select Metric:</label>
+    <select id="metricSelect">
+      <option value="roughness">Roughness (limit: 2000)</option>
+      <option value="rutting">Rutting (limit: 5mm)</option>
+      <option value="cracking">Cracking (limit: 5%)</option>
+      <option value="ravelling">Ravelling (limit: 1%)</option>
+      <option value="underconstruction">Under Construction (Any Metric Missing)</option>
+    </select>
+    <label>
+      <input type="checkbox" id="showOnlyRed" />
+      Show Only Segments Above Limit
+    </label>
+  </div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="segments.js"></script>
+  <script>
+    const map = L.map('map').setView([26.35, 76.25], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const limits = {
+      roughness: 2000,
+      rutting: 5,
+      cracking: 5,
+      ravelling: 1
+    };
+
+    let layerGroup = L.layerGroup().addTo(map);
+
+    function renderSegments(selectedMetric, showOnlyRed) {
+      layerGroup.clearLayers();
+      segments.forEach(segment => {
+        // If underconstruction mode
+        if (selectedMetric === "underconstruction") {
+          const pending = [];
+          ["roughness", "rutting", "cracking", "ravelling"].forEach(metric => {
+            if (segment[metric] == null || isNaN(segment[metric])) {
+              pending.push(metric.charAt(0).toUpperCase() + metric.slice(1));
+            }
+          });
+          if (pending.length === 0) {
+            return; // Skip if all metrics are present
+          }
+          const polyline = L.polyline([segment.start, segment.end], {
+            color: "blue",
+            weight: 4
+          }).bindPopup(`
+            <strong>Lane:</strong> ${segment.lane}<br>
+            <strong>Pending Metrics:</strong><br>
+            ${pending.join(", ")}
+          `);
+          polyline.addTo(layerGroup);
+          return;
+        }
+
+        // Regular metric mode
+        const value = segment[selectedMetric];
+        const limit = limits[selectedMetric];
+
+        if (value == null || isNaN(value)) {
+          return; // Skip segments with missing value for this metric
+        }
+
+        const color = value > limit ? "red" : "green";
+        if (showOnlyRed && value <= limit) {
+          return;
+        }
+
+        const polyline = L.polyline([segment.start, segment.end], {
+          color: color,
+          weight: 4
+        }).bindPopup(`
+          <strong>Lane:</strong> ${segment.lane}<br>
+          <strong>${selectedMetric.charAt(0).toUpperCase() + selectedMetric.slice(1)}:</strong> ${value}
+        `);
+        polyline.addTo(layerGroup);
+      });
+    }
+
+    // Initial render
+    const initialMetric = document.getElementById("metricSelect").value;
+    renderSegments(initialMetric, false);
+
+    // Event listeners
+    document.getElementById("metricSelect").addEventListener("change", () => {
+      const metric = document.getElementById("metricSelect").value;
+      const showOnlyRed = document.getElementById("showOnlyRed").checked;
+      renderSegments(metric, showOnlyRed);
+    });
+
+    document.getElementById("showOnlyRed").addEventListener("change", () => {
+      const metric = document.getElementById("metricSelect").value;
+      const showOnlyRed = document.getElementById("showOnlyRed").checked;
+      renderSegments(metric, showOnlyRed);
+    });
+  </script>
+</body>
+</html>
