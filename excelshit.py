@@ -2,12 +2,13 @@ import pandas as pd
 import json
 import time
 import orjson
+
 # --- Configuration ---
 file_path = r"resources\Comparison Delhi Vadodara Pkg 9 (Road Signage).xlsx"
 output_js_path = "segments.js"
 start = time.time()
+
 # Mapping of lanes to column index numbers
-# NOTE: You must update these index numbers to match your file (0-based)
 column_mapping = {
     "L1": {
         "start_lat": 5,   "start_lon": 6,   "end_lat": 7,   "end_lon": 8,
@@ -49,16 +50,17 @@ df = pd.read_excel(file_path, header=2)
 all_segments = []
 
 for lane, idxs in column_mapping.items():
-    # Extract relevant columns by integer index
+    # Extract relevant columns including chainage (columns 1 and 2)
     lane_df = df.iloc[:, [
+        1, 2,  # start_chainage, end_chainage
         idxs["start_lat"], idxs["start_lon"],
         idxs["end_lat"], idxs["end_lon"],
         idxs["roughness"], idxs["rutting"],
         idxs["cracking"], idxs["ravelling"]
     ]].copy()
 
-    # Rename columns to consistent names
     lane_df.columns = [
+        "start_chainage", "end_chainage",
         "start_lat", "start_lon",
         "end_lat", "end_lon",
         "roughness", "rutting",
@@ -67,30 +69,31 @@ for lane, idxs in column_mapping.items():
 
     lane_df["lane"] = lane
 
-    # Convert numeric columns safely
-    numeric_cols = ["start_lat", "start_lon", "end_lat", "end_lon",
-                    "roughness", "rutting", "cracking", "ravelling"]
+    numeric_cols = [
+        "start_chainage", "end_chainage",
+        "start_lat", "start_lon", "end_lat", "end_lon",
+        "roughness", "rutting", "cracking", "ravelling"
+    ]
     lane_df[numeric_cols] = lane_df[numeric_cols].apply(pd.to_numeric, errors="coerce")
 
-    # Drop rows missing essential coordinates
     lane_df.dropna(subset=["start_lat", "start_lon", "end_lat", "end_lon"], inplace=True)
 
-    # Create start and end coordinate arrays
     lane_df["start"] = lane_df[["start_lat", "start_lon"]].values.tolist()
     lane_df["end"] = lane_df[["end_lat", "end_lon"]].values.tolist()
 
-    # Columns for final JSON export
-    final_cols = ["lane", "start", "end", "roughness", "rutting", "cracking", "ravelling"]
+    final_cols = [
+        "lane", "start", "end",
+        "start_chainage", "end_chainage",
+        "roughness", "rutting", "cracking", "ravelling"
+    ]
 
     all_segments.extend(lane_df[final_cols].to_dict("records"))
 
 # --- Write to JS file ---
-
-
 with open(output_js_path, "wb") as f:
     f.write(b"const segments = ")
     f.write(orjson.dumps(all_segments))
     f.write(b";")
 
 end = time.time()
-print(f"✅ {output_js_path} generated successfully. in {end-start}")
+print(f"✅ {output_js_path} generated successfully in {end-start:.2f} seconds.")
