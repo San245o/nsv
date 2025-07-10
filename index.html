@@ -15,12 +15,15 @@
 </head>
 <body>
 
-<div id="sidebar" class="sidebar">
+<!-- Sidebar Navigation -->
+<div id="sidebar-nav" class="sidebar-nav">
     <button class="close-btn" onclick="closeNav()" aria-label="Close Sidebar">&times;</button>
     <a href="index.html">🗺️ Map View</a>
     <a href="dashboard.html">📊 Dashboard</a>
     <a href="report.html">📄 Report</a>
 </div>
+<!-- Hamburger/Open Button -->
+<button class="open-btn" onclick="openNav()" aria-label="Open Sidebar">&#9776;</button>
 
 <div id="main-content">
     <button class="open-btn" onclick="openNav()">&#9776;</button>
@@ -103,15 +106,12 @@
  <script src="segments.js"></script>
  <script>
     /* --- Sidebar Navigation Logic --- */
-    function openNav() {
-        document.getElementById("sidebar").style.width = "250px";
-        document.getElementById("main-content").style.marginLeft = "250px";
-    }
-
-    function closeNav() {
-        document.getElementById("sidebar").style.width = "0";
-        document.getElementById("main-content").style.marginLeft= "0";
-    }
+function openNav() {
+    document.getElementById("sidebar-nav").classList.add("open");
+}
+function closeNav() {
+    document.getElementById("sidebar-nav").classList.remove("open");
+}
 
  const map = L.map('map').setView([26.35, 76.25], 13);
  const osmLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
@@ -307,27 +307,7 @@
               segmentLayer = L.polyline([segment.start, segment.end], { color: color, weight: 4 });
           }
 
-          const popupContent = `<div class="video-container" style="margin-top:10px; background-color: black; color: white; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 20px;">
-  <div class="loader"></div>
-  <p style="margin-top: 10px; font-family: sans-serif; font-size: 14px;">Loading video...</p>
-</div>
-
-<style>
-  .loader {
-    width: 30px;
-    height: 30px;
-    border: 4px solid #444;
-    border-top: 4px solid #00ffd5;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-</style>
-`;
+          const popupContent = `<div class="video-container" style="margin-top:10px;">Loading video...</div>`;
           segmentLayer.bindPopup(popupContent, { minWidth: 340, className: 'video-popup' });
           segmentLayer.on('popupopen', (e) => getVideoForSegment(e.popup, segment));
           
@@ -666,7 +646,7 @@
 
  async function getVideoForSegment(popup, segment) {
  const source = segment.lane.startsWith("L") ? "L2" : "R2";
- const apiUrl = 'https://made-lobby-copies-linda.trycloudflare.com/trim';
+ const apiUrl = 'https://pounds-prominent-eos-diesel.trycloudflare.com/trim';
  const videoContainer = popup.getElement().querySelector('.video-container');
 
  try {
