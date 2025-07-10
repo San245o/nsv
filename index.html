@@ -307,17 +307,17 @@
               segmentLayer = L.polyline([segment.start, segment.end], { color: color, weight: 4 });
           }
 
-          const popupContent = `<div class="video-container" style="margin-top: 10px; background-color: black; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; flex-direction: column;">
-  <div class="spinner"></div>
-  <div style="margin-top: 20px; font-size: 1.2rem; font-family: Arial, sans-serif;">Loading video, please wait...</div>
+          const popupContent = `<div class="video-container" style="margin-top:10px; background-color: black; color: white; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 20px;">
+  <div class="loader"></div>
+  <p style="margin-top: 15px; font-family: Arial, sans-serif; font-size: 1rem;">Loading video, please wait...</p>
 </div>
 
 <style>
-  .spinner {
-    width: 50px;
-    height: 50px;
-    border: 6px solid #444;
-    border-top: 6px solid #00ffcc;
+  .loader {
+    width: 40px;
+    height: 40px;
+    border: 5px solid #333;
+    border-top: 5px solid #00ffc8;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
