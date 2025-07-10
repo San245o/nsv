@@ -65,7 +65,6 @@
             color: #fff;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            /* padding: 20px; <-- Moved to #main-content */
         }
         h2 {
             border-bottom: 2px solid #444;
@@ -92,7 +91,7 @@
         }
         #3d-chart-container {
             width: 100%;
-            height: 75vh; /* Adjusted height for better viewing */
+            height: 75vh;
             border-radius: 8px;
             overflow: hidden;
         }
@@ -154,12 +153,38 @@
             font-size: 0.9em;
             align-self: center;
         }
+        /* Infographic styles */
+        .infographic-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            margin-top: 24px;
+        }
+        .infographic-lane {
+            background: #23272e;
+            border-radius: 10px;
+            padding: 18px 20px 10px 20px;
+            min-width: 260px;
+            max-width: 320px;
+            flex: 1 1 260px;
+            box-shadow: 0 2px 8px #0002;
+        }
+        .infographic-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00bfff;
+        }
+        .infographic-chart {
+            width: 100%;
+            height: 180px;
+        }
     </style>
 </head>
 <body>
 
 <div id="sidebar" class="sidebar">
-    <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
+    <button class="close-btn" onclick="closeNav()" aria-label="Close Sidebar">&times;</button>
     <a href="index.html">🗺️ Map View</a>
     <a href="dashboard.html">📊 Dashboard</a>
     <a href="#">📄 Report</a>
@@ -182,14 +207,8 @@
         <option value="scatter">Scatter 3D</option>
         <option value="ribbon">Ribbon Surface</option>
     </select>
-    <label for="themeToggle3d">Theme:</label>
-    <select id="themeToggle3d">
-        <option value="dark">Dark</option>
-        <option value="light">Light</option>
-    </select>
 </div>
 <div id="3d-chart-container"></div>
-
 
 <h2 id="section2">Lane Dashboard - Sparklines</h2>
 <div id="table"></div>
@@ -197,8 +216,8 @@
 <h2 id="section3">Lane Dashboard - Summary Statistics</h2>
 <div id="summary-table"></div>
 
-
-<h2 id="section4">Lane Deterioration Prediction</h2>
+<!-- ADD THIS MISSING SECTION -->
+<h2 id="section-prediction">Deterioration Prediction</h2>
 <div class="prediction-container">
     <div class="controls">
         <label for="lane-select">Select Lane:</label>
@@ -208,13 +227,17 @@
     </div>
     <div id="chart"></div>
 </div>
+<!-- END OF MISSING SECTION -->
+
+<h2 id="section4">Lane Infographics</h2>
+<div class="infographic-container" id="infographic-container"></div>
 
 <h2 id="section5">Metric vs. Infrastructure Analysis</h2>
 <div class="correlation-container">
      <div class="controls">
         <label for="metric-infra-select">Select Metric:</label>
-        <select id="metric-infra-select"></select>
-        
+        <select id="metric-infra-select">
+        </select>
     </div>
     <div id="infra-chart"></div>
 </div>
@@ -227,7 +250,6 @@ function openNav() {
     document.getElementById("sidebar").style.width = "250px";
     document.getElementById("main-content").style.marginLeft = "250px";
 }
-
 function closeNav() {
     document.getElementById("sidebar").style.width = "0";
     document.getElementById("main-content").style.marginLeft= "0";
@@ -284,22 +306,21 @@ const summaryData = Object.values(grouped).map(d => {
         const avg = mean(arr);
         return Math.sqrt(arr.reduce((s,v)=>s+(v-avg)**2,0)/arr.length);
     };
-    const pctAbove = (arr, limit) => (arr.filter(v=>v>limit).length / arr.length * 100).toFixed(1);
     const avgRough = mean(d.roughness).toFixed(1);
     const maxRutt = Math.max(...d.rutting).toFixed(1);
-    const crackingPct = pctAbove(d.cracking, thresholds.cracking);
-    const ravellingPct = pctAbove(d.ravelling, thresholds.ravelling);
+    const maxCrack = Math.max(...d.cracking).toFixed(1);
+    const maxRav = Math.max(...d.ravelling).toFixed(1);
     const roughStd = stddev(d.roughness).toFixed(1);
     const maxroughness = Math.max(...d.roughness).toFixed(1);
     return {
         lane: d.lane,
         avgRoughness: avgRough,
         roughStdDev: roughStd,
-        maxRutting: maxRutt,
-        pctCracking: crackingPct,
-        pctRavelling: ravellingPct,
-        segments: count,
         maxRoughness : maxroughness,
+        maxCracking: maxCrack,
+        maxRavelling: maxRav,
+        maxRutting: maxRutt,
+        segments: count,
     };
 });
 new Tabulator("#summary-table", {
@@ -311,13 +332,83 @@ new Tabulator("#summary-table", {
         {title:"Roughness StdDev", field:"roughStdDev"},
         {title:"Max Roughness",field:"maxRoughness"},
         {title:"Max Rutting", field:"maxRutting"},
-        {title:"% Cracking > Limit", field:"pctCracking", formatter:cell => cell.getValue() + "%"},
-        {title:"% Ravelling > Limit", field:"pctRavelling", formatter:cell => cell.getValue() + "%"},
+        {title:"Max Cracking", field:"maxCracking"},
+        {title:"Max Ravelling", field:"maxRavelling"},
         {title:"Segments", field:"segments"},
     ]
 });
 
+// --- PART 1.5: LANE INFOGRAPHICS ---
+function renderLaneInfographics() {
+    const container = document.getElementById('infographic-container');
+    container.innerHTML = '';
+    const metrics = ['roughness', 'rutting', 'cracking', 'ravelling'];
+    const metricLabels = ['Roughness', 'Rutting', 'Cracking', 'Ravelling'];
+    const lanes = [...new Set(segments.map(s => s.lane))].sort();
 
+    lanes.forEach(lane => {
+        const laneSegments = segments.filter(s => s.lane === lane);
+        const totalSegments = laneSegments.length;
+
+        // Count how many segments exceed thresholds
+        let anomalyCounts = [0, 0, 0, 0];
+        let normalCount = 0;
+
+        laneSegments.forEach(seg => {
+            let hasAnomaly = false;
+            metrics.forEach((m, i) => {
+                if (seg[m] != null && seg[m] > thresholds[m]) {
+                    anomalyCounts[i]++;
+                    hasAnomaly = true;
+                }
+            });
+            if (!hasAnomaly) {
+                normalCount++;
+            }
+        });
+
+        const allCounts = [...anomalyCounts, normalCount];
+        const total = allCounts.reduce((sum, v) => sum + v, 0);
+
+        const percentages = allCounts.map(count =>
+            total > 0 ? +(count / total * 100).toFixed(1) : 0
+        );
+
+        const labelsWithPercents = [
+            ...metricLabels.map((l, i) => `${l} (${percentages[i]}%)`),
+            `Normal (${percentages[4]}%)`
+        ];
+
+        const colors = ['#00bfff', '#ff9800', '#e91e63', '#8bc34a', '#888'];
+
+        const chartId = `infographic-${lane}`;
+        const chartDiv = document.createElement('div');
+        chartDiv.className = 'infographic-lane';
+        chartDiv.innerHTML = `
+            <div class="infographic-title">Lane ${lane}</div>
+            <div id="${chartId}" class="infographic-chart"></div>`;
+        container.appendChild(chartDiv);
+
+        Plotly.newPlot(chartId, [{
+            values: allCounts,
+            labels: labelsWithPercents,
+            type: 'pie',
+            hole: 0.55,
+            marker: { colors: colors },
+            textinfo: 'label+percent',
+            insidetextorientation: 'radial',
+            sort: false
+        }], {
+            margin: {l: 10, r: 10, t: 10, b: 10},
+            paper_bgcolor: '#23272e',
+            plot_bgcolor: '#23272e',
+            font: {color: '#fff'},
+            showlegend: false,
+            height: 180
+        }, {displayModeBar: false});
+    });
+}
+renderLaneInfographics();
 // --- PART 2: PLOTLY SLIDER LOGIC ---
 const PREDICTION_YEARS = 5;
 const ANNUAL_DETERIORATION_RATE = 0.05;
@@ -404,21 +495,14 @@ function initializeSlider() {
 }
 initializeSlider();
 
-
 // --- PART 3: METRIC VS. INFRASTRUCTURE BOX PLOT ---
 function initializeInfrastructurePlot() {
     const metricSelect = document.getElementById('metric-infra-select');
     const chartDiv = document.getElementById('infra-chart');
 
-    /**
-     * Creates a box plot comparing a metric across different structure types.
-     * @param {string} metricId - The key for the metric to be plotted.
-     */
     function createStructureBoxPlot(metricId) {
-        // Filter for segments that have a structure defined (and isn't just 'normal road')
-        const filteredSegments = segments.filter(s => s.structure && s.structure.toLowerCase() !== 'normal road');
-        
-        // Prepare data for the box plot
+        // Filter for segments that have a structure defined (including 'normal road')
+        const filteredSegments = segments.filter(s => s.structure);
         const metricValues = filteredSegments.map(s => s[metricId] ?? 0);
         const structureTypes = filteredSegments.map(s => s.structure);
 
@@ -426,11 +510,11 @@ function initializeInfrastructurePlot() {
             y: metricValues,
             x: structureTypes,
             type: 'box',
-            boxpoints: 'all', // Show all underlying data points
-            jitter: 0.4,      // Spread out the points for better visibility
+            boxpoints: 'all',
+            jitter: 0.4,
             pointpos: -1.8,
             marker: { color: HIGHLIGHT_COLOR, opacity: 0.7 },
-            boxmean: 'sd' // Also show the mean and standard deviation
+            boxmean: 'sd'
         };
 
         const metricInfo = METRICS[metricId];
@@ -454,14 +538,12 @@ function initializeInfrastructurePlot() {
         option.textContent = METRICS[metricId].name;
         metricSelect.appendChild(option);
     }
-    metricSelect.value = 'roughness'; // Set a default value
+    metricSelect.value = 'roughness';
 
-    // Redraw plot when selection changes
     metricSelect.addEventListener('change', () => {
         createStructureBoxPlot(metricSelect.value);
     });
 
-    // Initial plot render
     createStructureBoxPlot(metricSelect.value);
 }
 initializeInfrastructurePlot();
@@ -474,7 +556,6 @@ function initialize3dPlot() {
     };
     const metricSelect3d = document.getElementById("metricSelect3d");
     const viewSelect3d = document.getElementById("viewSelect3d");
-    const themeToggle3d = document.getElementById("themeToggle3d");
     const chartDiv3d = document.getElementById("3d-chart-container");
 
     function prepareScatterTraces(metric) {
@@ -519,11 +600,10 @@ function initialize3dPlot() {
         }];
     }
 
-    function getLayout3d(metric, viewType, theme) {
-        const isDark = theme === 'dark';
-        const bg = isDark ? '#1e1e1e' : '#fff';
-        const fg = isDark ? '#e0e0e0' : '#000';
-        const grid = isDark ? '#444' : '#ccc';
+    function getLayout3d(metric, viewType) {
+        const bg = '#1e1e1e';
+        const fg = '#e0e0e0';
+        const grid = '#444';
         const metricTitle = metric.charAt(0).toUpperCase() + metric.slice(1);
         return {
             title: { text: `Lane ${metricTitle} Profile (${viewType === 'scatter' ? 'Scatter' : 'Ribbon'})`, font: { color: fg } },
@@ -542,22 +622,19 @@ function initialize3dPlot() {
     function renderPlot3d() {
         const metric = metricSelect3d.value;
         const viewType = viewSelect3d.value;
-        const theme = themeToggle3d.value;
         const traces = viewType === 'scatter' ? prepareScatterTraces(metric) : prepareRibbonSurface(metric);
-        const layout = getLayout3d(metric, viewType, theme);
+        const layout = getLayout3d(metric, viewType);
         Plotly.newPlot(chartDiv3d, traces, layout);
     }
 
     // Set defaults and initial render
     metricSelect3d.value = 'roughness';
     viewSelect3d.value = 'ribbon';
-    themeToggle3d.value = 'dark';
     renderPlot3d();
 
     // Event handlers
     metricSelect3d.addEventListener('change', renderPlot3d);
-    viewSelect.addEventListener('change', renderPlot3d);
-    themeToggle3d.addEventListener('change', renderPlot3d);
+    viewSelect3d.addEventListener('change', renderPlot3d);
 }
 initialize3dPlot();
 
