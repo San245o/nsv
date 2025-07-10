@@ -61,25 +61,33 @@ Convert your video into structured `.csv` metadata using OCR and GPS overlays.
 python format.py
 🚀 Step 2: Run the FastAPI Server
 Install Python dependencies:
-
+```bash
 pip install -r requirements.txt
+```
 Start the server locally:
-
+```bash
 uvicorn app:app --host 0.0.0.0 --port 8000
+```
 Your API is now live at:
+```bash
 👉 http://localhost:8000
+```
 
 🌐 Step 3: Make it Public (Optional but Useful)
 Use Cloudflare to expose your local FastAPI server:
 
 Install Cloudflared:
-
+```bash
 npm install -g cloudflared
+```
 Tunnel your API:
-
+```
 cloudflared tunnel --url http://localhost:8000
+```
 🌍 You’ll get a public HTTPS link like:
+```
 https://fasttrimmer-nhai.trycloudflare.com
+```
 
 🐳 Optional: Docker Support
 Build the Docker image:
@@ -89,6 +97,7 @@ Run the container:
 
 docker run -p 8000:8000 fasttrimmer
 🧪 API Usage
+```
 POST /trim
 Returns a trimmed .mp4 video clip based on given coordinates.
 
@@ -105,6 +114,7 @@ Returns a trimmed .mp4 video clip based on given coordinates.
 {
   "video_url": "https://yourserver.com/output_trimmed.mp4",
 }
+```
 📁 The output video contains only the relevant geospatial segment from your full recording.
 
 📈 Use Cases for NHAI
@@ -126,11 +136,12 @@ OCR Engine	Tesseract + OpenCV
 API Tunnel	Cloudflared
 Deployment	Docker, Uvicorn
 Data Format	CSV
-
+```
 🗃️ Sample CSV Output
 Timestamp	          Latitude	Longitude	
 2025-07-10 08:45	   28.6130	77.2300
-2025-07-10 08:46	   28.6136	77.2306	
+2025-07-10 08:46	   28.6136	77.2306
+```
 
 🔭 Future Scope
 AI detection of road distress (potholes, lane fading, debris)
