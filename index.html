@@ -1,123 +1,792 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>NHAI Road Segments Map - All Metrics with Satellite View</title>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    #map { height: 90vh; }
-    #controls {
-      margin: 10px;
-    }
-  </style>
+ <title>NHAI Road Segments Map</title>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ 
+ <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+ <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel = "stylesheet" href = "styles.css">
 </head>
 <body>
-  <h1>NHAI Road Segments Map</h1>
-  <div id="controls">
-    <label for="metricSelect">Select Metric:</label>
-    <select id="metricSelect">
-      <option value="roughness">Roughness (limit: 2000)</option>
-      <option value="rutting">Rutting (limit: 5mm)</option>
-      <option value="cracking">Cracking (limit: 5%)</option>
-      <option value="ravelling">Ravelling (limit: 1%)</option>
-      <option value="underconstruction">Under Construction (Any Metric Missing)</option>
-    </select>
-    <label>
-      <input type="checkbox" id="showOnlyRed" />
-      Show Only Segments Above Limit
-    </label>
-  </div>
-  <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="segments.js"></script>
-  <script>
-    const map = L.map('map').setView([26.35, 76.25], 13);
+<div id="sidebar" class="sidebar">
+    <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
+    <a href="index.html">🗺️ Map View</a>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="#">📄 Report</a>
+</div>
 
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    });
+<div id="main-content">
+    <button class="open-btn" onclick="openNav()">&#9776;</button>
+    <h1>NHAI Road Segments Map</h1>
+    <div id="controls">
+        <label for="metricSelect">Select Metric:</label>
+        <select id="metricSelect">
+        <option value="roughness">Roughness (limit: 2000)</option>
+        <option value="rutting">Rutting (limit: 5mm)</option>
+        <option value="cracking">Cracking (limit: 5%)</option>
+        <option value="ravelling">Ravelling (limit: 1%)</option>
+        <option value="underconstruction">Under Construction</option>
+        <option value="PCI">Pavement Condition Index (PCI)</option>
+        </select>
+        <input type="checkbox" id="showOnlyRed" style="margin-left: 20px;">
+        <label for="showOnlyRed">Show only segments exceeding limit</label>
+        <button id="selectRegionBtn" style="margin-left: 20px;">Select a Region</button>
+        <button id="clearSelectionBtn" style="margin-left: 10px; display: none;">Clear Selection</button>
+        <label style="margin-left:20px;display:flex;align-items:center;gap:4px;font-weight:normal;">
+            <input type="checkbox" id="showInfrastructure">
+            <span>Show Infrastructure</span>
+        </label>
+        <label style="margin-left:20px;display:flex;align-items:center;gap:4px;font-weight:normal;">
+            <input type="checkbox" id="showGradient">
+            <span>Show Gradient</span>
+        </label>
+    </div>
+    
+    <div id="main-container">
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
+    <div id="side-container">
+        <div id="table-container">
+        <h2 id="table-title">Top 50 Segments</h2>
+        <div id="side-table"></div>
+        </div>
+        <!-- New container for segment details -->
+        <div id="segment-details-container" style="display: none; padding: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 id="details-title" style="margin-top:0;">Segment Details</h2>
+                <button id="close-details-btn" style="padding: 2px 8px;">&times;</button>
+            </div>
+            <div id="details-content"></div>
+        </div>
+        <div id="chart-container">
+            <div id="lane-select-container" style="margin-top: 20px; display: none;">
+            <label for="laneSelect">Select Lane for Variation:</label>
+            <select id="laneSelect">
+                <option value="">--Select a Lane--</option>
+            </select>
+            </div>
+            <div id="lane-variation-charts-container">
+            <div class="variation-chart-block">
+                <div style="text-align:center;font-weight:bold;margin-bottom:2px;">Roughness</div>
+                <canvas id="roughness-chart"></canvas>
+            </div>
+            <div class="variation-chart-block">
+                <div style="text-align:center;font-weight:bold;margin-bottom:2px;">Rutting</div>
+                <canvas id="rutting-chart"></canvas>
+            </div>
+            <div class="variation-chart-block">
+                <div style="text-align:center;font-weight:bold;margin-bottom:2px;">Cracking</div>
+                <canvas id="cracking-chart"></canvas>
+            </div>
+            <div class="variation-chart-block">
+                <div style="text-align:center;font-weight:bold;margin-bottom:2px;">Ravelling</div>
+                <canvas id="ravelling-chart"></canvas>
+            </div>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
 
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles © Esri'
-    });
-
-    osmLayer.addTo(map);
-
-    const baseMaps = {
-      "OpenStreetMap": osmLayer,
-      "Satellite": satelliteLayer
-    };
-    L.control.layers(baseMaps).addTo(map);
-
-    const limits = {
-      roughness: 2000,
-      rutting: 5,
-      cracking: 5,
-      ravelling: 1
-    };
-
-    let layerGroup = L.layerGroup().addTo(map);
-
-    function renderSegments(selectedMetric, showOnlyRed) {
-      layerGroup.clearLayers();
-      segments.forEach(segment => {
-        if (selectedMetric === "underconstruction") {
-          const pending = [];
-          ["roughness", "rutting", "cracking", "ravelling"].forEach(metric => {
-            if (segment[metric] == null || isNaN(segment[metric])) {
-              pending.push(metric.charAt(0).toUpperCase() + metric.slice(1));
-            }
-          });
-          if (pending.length === 0) return;
-          const polyline = L.polyline([segment.start, segment.end], {
-            color: "blue",
-            weight: 4
-          }).bindPopup(`
-            <strong>Lane:</strong> ${segment.lane}<br>
-            <strong>Start Chainage:</strong> ${segment.start_chainage ?? "N/A"}<br>
-            <strong>End Chainage:</strong> ${segment.end_chainage ?? "N/A"}<br>
-            <strong>Pending Metrics:</strong><br>
-            ${pending.join(", ")}
-          `);
-          polyline.addTo(layerGroup);
-          return;
-        }
-
-        const value = segment[selectedMetric];
-        const limit = limits[selectedMetric];
-        if (value == null || isNaN(value)) return;
-
-        const color = value > limit ? "red" : "green";
-        if (showOnlyRed && value <= limit) return;
-
-        const polyline = L.polyline([segment.start, segment.end], {
-          color: color,
-          weight: 4
-        }).bindPopup(`
-          <strong>Lane:</strong> ${segment.lane}<br>
-          <strong>Start Chainage:</strong> ${segment.start_chainage ?? "N/A"}<br>
-          <strong>End Chainage:</strong> ${segment.end_chainage ?? "N/A"}<br>
-          <strong>${selectedMetric.charAt(0).toUpperCase() + selectedMetric.slice(1)}:</strong> ${value}
-        `);
-        polyline.addTo(layerGroup);
-      });
+ <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+ <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+ <script src="Leaflet.hotline-master/src/leaflet.hotline.js"></script>
+ <script src="segments.js"></script>
+ <script>
+    /* --- Sidebar Navigation Logic --- */
+    function openNav() {
+        document.getElementById("sidebar").style.width = "250px";
+        document.getElementById("main-content").style.marginLeft = "250px";
     }
 
-    const initialMetric = document.getElementById("metricSelect").value;
-    renderSegments(initialMetric, false);
+    function closeNav() {
+        document.getElementById("sidebar").style.width = "0";
+        document.getElementById("main-content").style.marginLeft= "0";
+    }
 
-    document.getElementById("metricSelect").addEventListener("change", () => {
-      const metric = document.getElementById("metricSelect").value;
-      const showOnlyRed = document.getElementById("showOnlyRed").checked;
-      renderSegments(metric, showOnlyRed);
+ const map = L.map('map').setView([26.35, 76.25], 13);
+ const osmLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
+ const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20 });
+ L.control.layers({ "Basic": osmLayer, "Satellite": satelliteLayer }).addTo(map);
+
+ const limits = { roughness: 2000, rutting: 5, cracking: 5, ravelling: 1 };
+ let layerGroup = L.layerGroup().addTo(map);
+ let infraLayerGroup = L.layerGroup().addTo(map); // Layer for infrastructure
+ let leafletLayers = {}; 
+ let drawnItems = new L.FeatureGroup().addTo(map);
+ let drawControl;
+ let metricsChart;
+ let variationCharts = {};
+ let infraLegend;
+
+ let currentSegmentsInView = [];
+
+ // --- NEW: PCI Calculation Logic ---
+ const pciWeights = { a: 0.01, b: 5, c: 4, d: 4 }; // Example weights from details panel
+
+ /**
+  * Calculates the Pavement Condition Index (PCI) for a segment.
+  * @param {object} segment - The segment data.
+  * @returns {number|null} The calculated PCI score, or null if data is incomplete.
+  */
+ function calculatePCI(segment) {
+    if (segment.roughness == null || segment.rutting == null || segment.cracking == null || segment.ravelling == null) {
+        return null; // Cannot calculate if any metric is missing
+    }
+    const pciScore = 100 - (
+        pciWeights.a * (segment.roughness || 0) +
+        pciWeights.b * (segment.rutting || 0) +
+        pciWeights.c * (segment.cracking || 0) +
+        pciWeights.d * (segment.ravelling || 0)
+    );
+    return Math.max(0, pciScore);
+ }
+
+
+ const structureColors = {
+     'svup': '#ff00ff', // magenta
+     'culvert': '#00ffff' // cyan
+     ,'vup': '#ff8c00' // darkorange
+     ,'minor bridge': '#0000ff' // blue
+     ,'minor bridge cum lvup': '#4b0082' // indigo
+     ,'major bridge': '#800000' // maroon
+     ,'rob': '#008000' // green
+     ,'lvup': '#808080', // grey
+     'default': '#808080' // grey for others
+ };
+ 
+  // Helper function from gradients.html to create points for the hotline effect
+  function generateIntermediatePoints(start, end, numPoints) {
+    const latStep = (end[0] - start[0]) / numPoints;
+    const lngStep = (end[1] - start[1]) / numPoints;
+    const points = [];
+    for (let i = 0; i <= numPoints; i++) {
+        points.push([start[0] + latStep * i, start[1] + lngStep * i]);
+    }
+    return points;
+  }
+
+
+ function renderInfrastructure(show) {
+     infraLayerGroup.clearLayers();
+     
+     if (infraLegend) {
+         map.removeControl(infraLegend);
+         infraLegend = null;
+     }
+
+     if (!show) {
+         return;
+     }
+
+     infraLegend = L.control({position: 'bottomright'});
+     infraLegend.onAdd = function (map) {
+         const div = L.DomUtil.create('div', 'info legend');
+         let legendHTML = '<h4>Infrastructure</h4>';
+         for (const key in structureColors) {
+             if (key !== 'default') {
+                 const color = structureColors[key];
+                 const label = key.charAt(0).toUpperCase() + key.slice(1);
+                 legendHTML += `<i style="background:${color}"></i> ${label}<br>`;
+             }
+         }
+         div.innerHTML = legendHTML;
+         return div;
+     };
+     map.addControl(infraLegend);
+
+     segments.forEach(segment => {
+         if (segment.structure && segment.structure.toLowerCase() !== 'normal road') {
+             const midPoint = [
+                 (segment.start[0] + segment.end[0]) / 2,
+                 (segment.start[1] + segment.end[1]) / 2
+             ];
+             const structureType = segment.structure.toLowerCase();
+             const color = structureColors[structureType] || structureColors['default'];
+
+             const marker = L.circleMarker(midPoint, {
+                 radius: 6,
+                 fillColor: color,
+                 color: "#000",
+                 weight: 1,
+                 opacity: 1,
+                 fillOpacity: 0.8
+             }).addTo(infraLayerGroup);
+
+             marker.bindPopup(`<strong>Structure:</strong> ${segment.structure}<br><strong>Lane:</strong> ${segment.lane}<br><strong>Chainage:</strong> ${segment.start_chainage}`, {
+                 className: 'infra-popup'
+             });
+         }
+     });
+ }
+
+ function renderSegments(selectedMetric, showOnlyRed, useGradient, bounds = null) {
+  layerGroup.clearLayers();
+  leafletLayers = {};
+  let segmentsForTable = [];
+  let segmentsToRender = bounds ? segments.filter(segment => bounds.contains(segment.start) || bounds.contains(segment.end)) : segments;
+  currentSegmentsInView = segmentsToRender;
+
+  segmentsToRender.forEach(segment => {
+      let value;
+      const limit = limits[selectedMetric];
+      let segmentLayer;
+
+      let shouldDisplay = false;
+
+      if (selectedMetric === "PCI") {
+          value = calculatePCI(segment);
+          if (value !== null) {
+              // For PCI, "exceeding limit" means being in poor condition (< 50)
+              if (!showOnlyRed || value < 50) {
+                  shouldDisplay = true;
+              }
+          }
+          // Always add to table list if calculable, sorting will happen later
+          if (value !== null) segmentsForTable.push(segment);
+      } else if (selectedMetric === "underconstruction") {
+          if (segment.roughness == null || segment.rutting == null || segment.cracking == null || segment.ravelling == null) {
+              shouldDisplay = true;
+          }
+      } else {
+          value = segment[selectedMetric];
+          if (value != null && !isNaN(value)) {
+              if (!showOnlyRed || value > limit) {
+                  shouldDisplay = true;
+              }
+          }
+      }
+
+
+      if (shouldDisplay) {
+          if (useGradient && selectedMetric !== "underconstruction") {
+              // GRADIENT LOGIC
+              const intermediatePoints = generateIntermediatePoints(segment.start, segment.end, 10);
+              const hotlineData = intermediatePoints.map(point => [...point, value]);
+              
+              let palette, min, max;
+              if (selectedMetric === 'PCI') {
+                  // PCI palette: Poor (Red) -> Fair (Orange) -> Good (Yellow) -> Excellent (Green)
+                  palette = { 0.5: 'red', 0.7: 'orange', 0.85: 'lightgreen', 1.0: 'green' };
+                  min = 0;
+                  max = 100;
+              } else {
+                  // Standard palette: Good (Green) to Bad (Red)
+                  palette = { 0.0: 'green', 0.8: 'yellow', 1.0: 'red' };
+                  min = 0;
+                  max = limits[selectedMetric];
+              }
+
+              segmentLayer = L.hotline(hotlineData, {
+                  min: min,
+                  max: max,
+                  palette: palette,
+                  weight: 5,
+                  outlineWidth: 0
+              });
+          } else {
+              // ORIGINAL SOLID COLOR LOGIC
+              let color = 'blue'; // Default for under construction
+              if (selectedMetric === 'PCI') {
+                  if (value < 50) color = 'red';
+                  else if (value < 70) color = 'orange';
+                  else if (value < 85) color = 'lightgreen';
+                  else color = 'green';
+              } else if (selectedMetric !== "underconstruction") {
+                  color = value > limit ? "red" : value > 0.8 * limit ? "yellow" : "green";
+              }
+              segmentLayer = L.polyline([segment.start, segment.end], { color: color, weight: 4 });
+          }
+
+          const popupContent = `<div class="video-container" style="margin-top:10px;">Loading video...</div>`;
+          segmentLayer.bindPopup(popupContent, { minWidth: 340, className: 'video-popup' });
+          segmentLayer.on('popupopen', (e) => getVideoForSegment(e.popup, segment));
+          
+          // New: Click event to show details in the side panel
+          segmentLayer.on('click', (e) => {
+              L.DomEvent.stopPropagation(e); // Prevent map click from firing
+              showSegmentDetails(segment);
+          });
+
+          segmentLayer.addTo(layerGroup);
+
+          const segmentId = `${segment.lane}_${segment.start_chainage}`;
+          leafletLayers[segmentId] = segmentLayer;
+          segmentsForTable.push(segment);
+      }
+  });
+  
+  if (bounds) {
+    document.getElementById('side-container').classList.add('bounded-mode');
+    document.getElementById('chart-container').style.display = 'block';
+
+    populateLaneSelect(segmentsForTable);
+    document.getElementById('lane-select-container').style.display = 'block';
+    document.getElementById('side-table').innerHTML = '';
+    document.getElementById('table-title').innerText = '';
+
+    const laneSelect = document.getElementById('laneSelect');
+    let l1Option = Array.from(laneSelect.options).find(opt => opt.value === 'L1');
+    if (l1Option) {
+      laneSelect.value = 'L1';
+      generateLaneVariationGraphs('L1');
+    } else if (laneSelect.options.length > 1) {
+      laneSelect.selectedIndex = 1;
+      generateLaneVariationGraphs(laneSelect.options[1].value);
+    } else {
+      clearVariationCharts();
+    }
+  } else {
+    document.getElementById('side-container').classList.remove('bounded-mode');
+    document.getElementById('chart-container').style.display = 'none';
+    populateSideTable(segmentsForTable, selectedMetric);
+    document.getElementById('lane-select-container').style.display = 'none';
+    clearVariationCharts();
+  }
+}
+ function populateLaneSelect(segments) {
+ const laneSelect = document.getElementById('laneSelect');
+ laneSelect.innerHTML = '<option value="">--Select a Lane--</option>'; // Reset
+ const lanes = [...new Set(segments.map(s => s.lane))].sort();
+ lanes.forEach(lane => {
+ const option = document.createElement('option');
+ option.value = lane;
+ option.textContent = lane;
+ laneSelect.appendChild(option);
+ });
+ }
+
+ document.getElementById('laneSelect').addEventListener('change', (event) => {
+ const selectedLane = event.target.value;
+ if (selectedLane) {
+ generateLaneVariationGraphs(selectedLane);
+ } else {
+ clearVariationCharts();
+ }
+ });
+
+ function generateLaneVariationGraphs(laneId) {
+  clearVariationCharts();
+  const laneSegments = currentSegmentsInView.filter(s => s.lane === laneId).sort((a,b) => a.start_chainage - b.start_chainage);
+
+  const metrics = ['roughness', 'rutting', 'cracking', 'ravelling'];
+  metrics.forEach(metric => {
+    const chartData = {
+      labels: laneSegments.map(s => s.start_chainage),
+      datasets: [{
+        label: `${metric.charAt(0).toUpperCase() + metric.slice(1)}`,
+        data: laneSegments.map(s => s[metric] || 0),
+        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+        categoryPercentage: 1.0,
+        barPercentage: 0.7
+      }]
+    };
+    const ctx = document.getElementById(`${metric}-chart`).getContext('2d');
+    variationCharts[metric] = new Chart(ctx, {
+      type: 'bar',
+      data: chartData,
+      options: {
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: false
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Chainage' },
+            ticks: { autoSkip: true, maxTicksLimit: 8 }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: metric.charAt(0).toUpperCase() + metric.slice(1) }
+          }
+        },
+        responsive: false,
+        maintainAspectRatio: false
+      }
     });
-    document.getElementById("showOnlyRed").addEventListener("change", () => {
-      const metric = document.getElementById("metricSelect").value;
-      const showOnlyRed = document.getElementById("showOnlyRed").checked;
-      renderSegments(metric, showOnlyRed);
+  });
+ }
+
+ function clearVariationCharts() {
+ for (const chartKey in variationCharts) {
+ if (variationCharts[chartKey]) {
+ variationCharts[chartKey].destroy();
+ }
+ }
+ const canvases = document.querySelectorAll('#lane-variation-charts-container canvas');
+ canvases.forEach(canvas => {
+ const ctx = canvas.getContext('2d');
+ ctx.clearRect(0, 0, canvas.width, canvas.height);
+ });
+ }
+
+
+ function populateSideTable(tableSegments, metric) {
+ const tableContainer = document.getElementById('side-table');
+ let metricName = metric.charAt(0).toUpperCase() + metric.slice(1);
+ 
+ if (metric === 'PCI') {
+    document.getElementById('table-title').innerText = `Top 50 Worst Segments by PCI`;
+    // Calculate PCI for each segment to be used for sorting and display
+    tableSegments.forEach(segment => {
+        segment.pci_score = calculatePCI(segment);
     });
-  </script>
+    // Sort by PCI score, ascending (worst first). Segments without a score are pushed to the end.
+    tableSegments.sort((a, b) => {
+        const pciA = a.pci_score ?? Infinity;
+        const pciB = b.pci_score ?? Infinity;
+        return pciA - pciB;
+    });
+ } else {
+    document.getElementById('table-title').innerText = `Top 50 Segments by ${metricName}`;
+    // Standard descending sort for other metrics (higher value is worse)
+    tableSegments.sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
+ }
+
+ const top50 = tableSegments.slice(0, 50);
+
+ let tableHTML = '<table><thead><tr><th>Lane</th>';
+ tableHTML += `<th>${metricName}</th><th>Structure</th></tr></thead><tbody>`;
+
+ top50.forEach(segment => {
+ const segmentId = `${segment.lane}_${segment.start_chainage}`;
+ const hasStructure = segment.structure && segment.structure.toLowerCase() !== 'normal road';
+ const rowClass = hasStructure ? 'class="structure-row"' : '';
+ const valueToDisplay = metric === 'PCI' ? (segment.pci_score?.toFixed(1) ?? 'N/A') : (segment[metric] || 'N/A');
+
+ tableHTML += `<tr ${rowClass} onclick="onTableRowClick('${segmentId}')">
+ <td>${segment.lane}</td>
+ <td>${valueToDisplay}</td>
+ <td>${segment.structure || 'N/A'}</td>
+ </tr>`;
+ });
+
+ tableHTML += '</tbody></table>';
+ tableContainer.innerHTML = tableHTML;
+ }
+
+ function onTableRowClick(segmentId) {
+ const layer = leafletLayers[segmentId];
+ if (layer) {
+ map.fitBounds(layer.getBounds().pad(0.1));
+ layer.openPopup();
+ }
+ }
+
+ // --- NEW: Segment Details Panel Logic ---
+
+ let currentSelectedSegment = null;
+
+ /**
+  * Hides the segment details panel and shows the top 50 table.
+  */
+ function hideSegmentDetails() {
+    document.getElementById('segment-details-container').style.display = 'none';
+    document.getElementById('table-container').style.display = 'block';
+    currentSelectedSegment = null;
+ }
+
+ /**
+  * Shows the details panel for a specific segment.
+  * @param {object} segment - The segment data object.
+  */
+ function showSegmentDetails(segment) {
+    if (currentSelectedSegment === segment) return; // Don't re-render if already selected
+    currentSelectedSegment = segment;
+
+    document.getElementById('table-container').style.display = 'none';
+    document.getElementById('segment-details-container').style.display = 'block';
+    
+    const titleEl = document.getElementById('details-title');
+    titleEl.innerText = `Details for ${segment.lane} at ${segment.start_chainage}`;
+
+    const contentEl = document.getElementById('details-content');
+
+    // --- NEW: Deterioration Parameters (Configurable) ---
+    // base_k: The intrinsic deterioration rate without traffic.
+    // esal_sensitivity: How much each ESAL unit increases the k-factor.
+    const deteriorationParams = {
+        roughness: { base_k: 0.08, esal_sensitivity: 0.00000005 },
+        rutting:   { base_k: 0.05, esal_sensitivity: 0.00000010 },
+        cracking:  { base_k: 0.15, esal_sensitivity: 0.00000002 },
+        ravelling: { base_k: 0.12, esal_sensitivity: 0.00000001 }
+    };
+    
+    // --- 1. Pavement Condition Index (PCI) ---
+    const pciWeights = { a: 0.01, b: 5, c: 4, d: 4 }; // Example weights
+    const pciScore = 100 - (
+        pciWeights.a * (segment.roughness || 0) +
+        pciWeights.b * (segment.rutting || 0) +
+        pciWeights.c * (segment.cracking || 0) +
+        pciWeights.d * (segment.ravelling || 0)
+    );
+    const pciClamped = Math.max(0, pciScore.toFixed(1));
+    
+    let pciClass = 'Poor';
+    if (pciClamped > 85) pciClass = 'Excellent';
+    else if (pciClamped > 70) pciClass = 'Good';
+    else if (pciClamped > 50) pciClass = 'Fair';
+
+    // --- 2. Pavement Deterioration ---
+    // We will calculate this inside a function that can be re-run with ESAL data
+    function getDeteriorationHTML(daily_vehicles = 1000, avg_axles = 3) {
+        let deteriorationHTML = '';
+        const daily_esal = daily_vehicles * avg_axles;
+
+        for (const metric in limits) {
+            const params = deteriorationParams[metric];
+            // Calculate a metric-specific k-factor based on ESALs
+            const k_factor = params.base_k + (daily_esal * params.esal_sensitivity);
+
+            const D0 = segment[metric];
+            const limit = limits[metric];
+            let predictionText = 'N/A (No initial damage)';
+
+            if (D0 != null && D0 > 0) {
+                if (D0 >= limit) {
+                    predictionText = '<span class="metric-value already-exceeds">Already Exceeds Limit</span>';
+                } else {
+                    // The core prediction formula
+                    const timeToLimit = (1 / k_factor) * Math.log(limit / D0);
+                    predictionText = `in <strong style="display:inline">${timeToLimit.toFixed(1)} years</strong>`;
+                }
+            }
+            const metricName = metric.charAt(0).toUpperCase() + metric.slice(1);
+            deteriorationHTML += `
+                <div class="deterioration-item">
+                    <span class="metric-name">${metricName}</span>
+                    <span class="metric-value">${predictionText}</span>
+                </div>`;
+        }
+        return deteriorationHTML;
+    }
+
+    // --- 3. Build the HTML ---
+    contentEl.innerHTML = `
+    <div class = "coordinates-display">
+        <span class="coordinates-value">(${segment.start[0].toFixed(5)}, ${segment.start[1].toFixed(5)})</span>
+        <span class="coordinates-value">(${segment.end[0].toFixed(5)}, ${segment.end[1].toFixed(5)})</span>
+        <p></p>
+        <a href="https://www.google.com/maps/search/?api=1&query=${segment.start[0]},${segment.start[1]}" target="_blank" class="coordinates-link">View on Google Maps</a> 
+       
+    </div>
+        <!-- PCI Section -->
+        <div class="details-section">
+            <h3>
+                <span>Pavement Condition Index (PCI)</span>
+                <div class="tooltip-container">❓
+                    <span class="tooltip-text">PCI = 100 - (a*IRI + b*Rut + ...)<br>Weights: a=${pciWeights.a}, b=${pciWeights.b}, c=${pciWeights.c}, d=${pciWeights.d}</span>
+                </div>
+            </h3>
+            <div class="pci-display">
+                <span class="pci-score-value ${'pci-' + pciClass}">${pciClamped}</span>
+                <span class="pci-score-class ${'pci-' + pciClass}">(${pciClass})</span>
+            </div>
+        </div>
+
+        <!-- Deterioration Section -->
+        <div class="details-section">
+            <h3>
+                <span>Pavement Deterioration Models</span>
+                <div class="tooltip-container">❓
+                    <span class="tooltip-text">D(t) = D₀ * e^(k*t)<br>Predicts time 't' until a metric reaches its limit, using a unique 'k' for each metric based on traffic.</span>
+                </div>
+            </h3>
+            <div id="deterioration-results">
+                ${getDeteriorationHTML()}
+            </div>
+        </div>
+
+        <!-- ESAL Section -->
+        <div class="details-section">
+            <h3>
+                <span>ESAL Adjustment</span>
+                 <div class="tooltip-container">❓
+                    <span class="tooltip-text">Adjust deterioration rate 'k' based on traffic.</span>
+                </div>
+            </h3>
+            <div id="esal-inputs">
+                <div class="esal-item">
+                    <label for="vehicles">Avg. Daily Vehicles:</label>
+                    <input type="number" id="vehicles" value="1000">
+                </div>
+                <div class="esal-item">
+                    <label for="axles" style="margin-top:5px; display:inline-block;">Avg. Axles/Vehicle:</label>
+                    <input type="number" id="axles" value="3">
+                </div>
+            </div>
+        </div>
+    `;
+
+    // --- 4. Add Event Listeners for ESAL ---
+    const updateDeterioration = () => {
+        const vehicles = document.getElementById('vehicles').value || 1000;
+        const axles = document.getElementById('axles').value || 3;
+        // Example logic: base rate + traffic component. Adjust as needed.
+        const new_k = 0.03 + (vehicles * axles) / 500000; 
+        document.getElementById('deterioration-results').innerHTML = getDeteriorationHTML(vehicles, axles);    };
+
+    document.getElementById('vehicles').addEventListener('input', updateDeterioration);
+    document.getElementById('axles').addEventListener('input', updateDeterioration);
+ }
+
+
+ async function getVideoForSegment(popup, segment) {
+ const source = segment.lane.startsWith("L") ? "L2" : "R2";
+ const apiUrl = 'https://aj-mysterious-possess-industrial.trycloudflare.com/trim';
+ const videoContainer = popup.getElement().querySelector('.video-container');
+
+ try {
+ const response = await fetch(apiUrl, {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ source: source,
+ start_lat: parseFloat(segment.start[0]),
+ start_lon: parseFloat(segment.start[1]),
+ end_lat: parseFloat(segment.end[0]),
+ end_lon: parseFloat(segment.end[1])
+ })
+ });
+ if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+ const data = await response.json();
+ 
+ if (data.video_url) {
+ const isLeft = segment.lane.startsWith('L');
+ const orderedLanes = isLeft ? ['L4', 'L3', 'L2', 'L1'] : ['R4', 'R3', 'R2', 'R1'];
+ const segmentsAtLocation = segments.filter(s => s.start_chainage === segment.start_chainage);
+ const laneDataMap = segmentsAtLocation.reduce((acc, s) => { acc[s.lane] = s; return acc; }, {});
+
+ let tableHTML = '<table><thead><tr><th>Metric</th>';
+ orderedLanes.forEach(laneName => { tableHTML += `<th>${laneName}</th>`; });
+ tableHTML += '</tr></thead><tbody>';
+
+ for (const metric in limits) {
+ const metricName = metric.charAt(0).toUpperCase() + metric.slice(1);
+ tableHTML += `<tr><td>${metricName}</td>`;
+ orderedLanes.forEach(laneName => {
+ const laneSegment = laneDataMap[laneName];
+ let value = 'N/A';
+ let colorClass = 'metric-green';
+ if (laneSegment && laneSegment[metric] != null) {
+ value = laneSegment[metric];
+ if (value > limits[metric]) colorClass = 'metric-red';
+ else if(value>0.8*limits[metric]) colorClass = 'metric-yellow';
+ }
+ tableHTML += `<td class="${colorClass}">${value}</td>`;
+ });
+ tableHTML += '</tr>';
+ }
+ tableHTML += '</tbody></table>';
+ 
+ videoContainer.innerHTML = `
+    <div class="view-mode-selector">
+        <select class="view-mode-select">
+            <option value="normal">Normal</option>
+            <option value="grayscale">Grayscale</option>
+            <option value="high-contrast">High Contrast</option>
+        </select>
+    </div>
+    <video-js id="segment-video" class="vjs-default-skin" controls autoplay muted preload="auto"><source src="${data.video_url}" type="video/mp4"></video-js>
+ `;
+ const player = videojs('segment-video');
+ const annotationEl = document.createElement('div');
+ annotationEl.className = 'video-annotation';
+ annotationEl.innerHTML = tableHTML;
+ player.el().appendChild(annotationEl);
+ 
+ const viewModeSelect = videoContainer.querySelector('.view-mode-select');
+ viewModeSelect.addEventListener('change', (e) => {
+    const playerEl = player.el();
+    playerEl.classList.remove('grayscale-mode', 'high-contrast-mode'); // Remove existing modes
+    const selectedMode = e.target.value;
+    if (selectedMode === 'grayscale') {
+        playerEl.classList.add('grayscale-mode');
+    } else if (selectedMode === 'high-contrast') {
+        playerEl.classList.add('high-contrast-mode');
+    }
+ });
+ 
+ player.on('fullscreenchange', () => {
+ annotationEl.classList.toggle('fullscreen-active', player.isFullscreen());
+ });
+
+ popup.on('remove', () => { if (player) player.dispose(); });
+
+ } else {
+ videoContainer.innerHTML = data.detail || "No video found for this segment.";
+ }
+ } catch (error) {
+ console.error("Failed to fetch video:", error);
+ videoContainer.innerHTML = "Failed to load video.";
+ }
+ }
+ 
+ function updateMap() {
+    const metric = document.getElementById("metricSelect").value;
+    const showOnlyRed = document.getElementById("showOnlyRed").checked;
+    const useGradient = document.getElementById("showGradient").checked; // Get gradient state
+    const bounds = drawnItems.getBounds();
+
+    if (bounds.isValid()) {
+        renderSegments(metric, showOnlyRed, useGradient, bounds);
+    } else {
+        renderSegments(metric, showOnlyRed, useGradient);
+    }
+}
+
+ document.getElementById("metricSelect").addEventListener("change", updateMap);
+ document.getElementById("showOnlyRed").addEventListener("change", updateMap);
+ document.getElementById("showGradient").addEventListener("change", updateMap); // Listener for the new checkbox
+ document.getElementById("showInfrastructure").addEventListener("change", function() {
+     renderInfrastructure(this.checked);
+ });
+
+ document.getElementById("selectRegionBtn").addEventListener("click", () => {
+ drawControl = new L.Draw.Rectangle(map, {
+ shapeOptions: {
+ color: '#007bff'
+ }
+ });
+ drawControl.enable();
+ });
+
+ document.getElementById("clearSelectionBtn").addEventListener("click", () => {
+ drawnItems.clearLayers();
+ document.getElementById("clearSelectionBtn").style.display = 'none';
+ document.getElementById('laneSelect').value = '';
+ updateMap();
+ });
+
+ map.on(L.Draw.Event.CREATED, function (event) {
+ drawnItems.clearLayers();
+ const layer = event.layer;
+ drawnItems.addLayer(layer);
+ const bounds = layer.getBounds();
+ map.fitBounds(bounds);
+ updateMap(); // Use updateMap to render with correct settings
+ document.getElementById("clearSelectionBtn").style.display = 'inline-block';
+ if(drawControl) {
+ drawControl.disable();
+ }
+ });
+ 
+ // New: Listeners to close the details panel
+ map.on('click', hideSegmentDetails);
+ document.getElementById('close-details-btn').addEventListener('click', hideSegmentDetails);
+
+ updateMap(); // Initial render
+ </script>
 </body>
 </html>
