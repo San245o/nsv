@@ -65,6 +65,81 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
+        .open-btn {
+    font-size: 24px;
+    cursor: pointer;
+    background: rgba(30, 41, 59, 0.8);
+    color: #fff;
+    padding: 8px 12px;
+    border: 1px solid var(--gray-600, #334155);
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 9998;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.open-btn:hover {
+    background-color: #2563eb;
+    background-color: var(--primary-600, #2563eb);
+    transform: scale(1.1);
+}
+    
+
+    .sidebar-nav {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 10000;
+    top: 0;
+    left: 0;
+    background-color: #181f2a; /* fallback if var not set */
+    background-color: var(--gray-900, #181f2a);
+    overflow-x: hidden;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    padding-top: 60px;
+    border-right: 1px solid var(--gray-700, #232b3b);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+}
+
+.sidebar-nav.open {
+    width: 260px;
+}
+
+.sidebar-nav a {
+    padding: 12px 16px 12px 32px;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gray-300, #cbd5e1);
+    display: block;
+    transition: all 0.3s ease;
+    border-radius: 0 20px 20px 0;
+}
+
+.sidebar-nav a:hover {
+    color: #fff;
+    background-color: rgba(59, 130, 246, 0.12);
+    transform: translateX(5px);
+}
+
+.sidebar-nav .close-btn {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    font-size: 36px;
+    background: none;
+    border: none;
+    color: var(--gray-400, #94a3b8);
+    cursor: pointer;
+    transition: color 0.3s, transform 0.3s;
+}
+.sidebar-nav .close-btn:hover {
+    color: #fff;
+    transform: rotate(90deg);
+}
 
         /* Enhanced Loading Animation */
         .loading {
@@ -1250,12 +1325,14 @@
     </style>
 </head>
 <body>
-    <div id="sidebar" class="sidebar">
+    <div id="sidebar-nav" class="sidebar-nav">
     <button class="close-btn" onclick="closeNav()" aria-label="Close Sidebar">&times;</button>
     <a href="index.html">🗺️ Map View</a>
     <a href="dashboard.html">📊 Dashboard</a>
     <a href="report.html">📄 Report</a>
-    </div>
+</div>
+<!-- Hamburger/Open Button -->
+<button class="open-btn" onclick="openNav()" aria-label="Open Sidebar">&#9776;</button>
     <!-- Enhanced Loading Screen -->
     <div class="loading" id="loading">
         <div class="spinner"></div>
@@ -3254,6 +3331,12 @@ function hexToRgb(hex) {
         document.addEventListener('mousedown', function() {
             document.body.classList.remove('keyboard-navigation');
         });
+        function openNav() {
+    document.getElementById("sidebar-nav").classList.add("open");
+}
+function closeNav() {
+    document.getElementById("sidebar-nav").classList.remove("open");
+}
     </script>
 </body>
 </html>
