@@ -1,0 +1,3253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highway Pavement Condition Intelligence Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-50: #eff6ff;
+            --primary-100: #dbeafe;
+            --primary-500: #3b82f6;
+            --primary-600: #2563eb;
+            --primary-700: #1d4ed8;
+            --primary-900: #1e3a8a;
+            
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            
+            --success-500: #10b981;
+            --warning-500: #f59e0b;
+            --error-500: #ef4444;
+            --purple-500: #8b5cf6;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            
+            --border-radius-sm: 0.375rem;
+            --border-radius-md: 0.5rem;
+            --border-radius-lg: 0.75rem;
+            --border-radius-xl: 1rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+            background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 50%, var(--gray-900) 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Enhanced Loading Animation */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--gray-900) 0%, var(--gray-800) 50%, var(--gray-900) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--gray-700);
+            border-top: 4px solid var(--primary-500);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 24px;
+        }
+
+        .loading-text {
+            color: var(--gray-300);
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.025em;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Enhanced Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: clamp(16px, 4vw, 32px);
+            display: flex;
+            flex-direction: column;
+            gap: clamp(20px, 3vw, 32px);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        /* Enhanced Header */
+        .header {
+            text-align: center;
+            animation: fadeInUp 0.6s ease-out;
+            margin-bottom: clamp(16px, 2vw, 24px);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(12px, 2vw, 20px);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .header-icon {
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
+            padding: clamp(12px, 2vw, 16px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 3s infinite;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-icon::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        .header-icon i {
+            width: clamp(28px, 4vw, 36px);
+            height: clamp(28px, 4vw, 36px);
+            color: white;
+            z-index: 1;
+        }
+
+        .header-text {
+            text-align: left;
+        }
+
+        .header h1 {
+            font-size: clamp(1.75rem, 4vw, 3rem);
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff, var(--gray-300));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+        }
+
+        .header p {
+            color: var(--gray-400);
+            font-size: clamp(0.875rem, 2vw, 1.25rem);
+            margin: 8px 0 0 0;
+            font-weight: 500;
+            letter-spacing: 0.025em;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .action-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: var(--shadow-md);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
+            color: white;
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, var(--gray-700), var(--gray-600));
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .action-btn i {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Enhanced KPI Section */
+        .kpi-section {
+            margin-bottom: clamp(20px, 3vw, 32px);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+            gap: clamp(16px, 3vw, 24px);
+        }
+
+        .kpi-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--gray-600);
+            border-radius: var(--border-radius-xl);
+            padding: clamp(20px, 3vw, 28px);
+            backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary-500);
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        .kpi-card:hover::before {
+            left: 100%;
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .kpi-title {
+            font-size: 0.875rem;
+            color: var(--gray-400);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .kpi-icon {
+            width: 24px;
+            height: 24px;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .kpi-card:hover .kpi-icon {
+            transform: scale(1.3) rotate(10deg);
+        }
+
+        .kpi-icon.blue { color: var(--primary-500); }
+        .kpi-icon.green { color: var(--success-500); }
+        .kpi-icon.yellow { color: var(--warning-500); }
+        .kpi-icon.red { color: var(--error-500); }
+
+        .kpi-value {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 800;
+            color: white;
+            margin-bottom: 8px;
+            transition: color 0.3s ease;
+            line-height: 1.1;
+            letter-spacing: -0.025em;
+        }
+
+        .kpi-description {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            font-weight: 500;
+            letter-spacing: 0.025em;
+        }
+
+        .condition-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: var(--border-radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.5s ease-out;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .condition-badge:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-md);
+        }
+
+        .condition-badge.excellent { background-color: #059669; }
+        .condition-badge.good { background-color: var(--success-500); }
+        .condition-badge.fair { background-color: var(--warning-500); }
+        .condition-badge.poor { background-color: var(--error-500); }
+        .condition-badge.very-poor { background-color: var(--purple-500); }
+
+        /* Enhanced Main Content Layout */
+        .main-content {
+            display: grid;
+            grid-template-columns: minmax(300px, 380px) 1fr;
+            gap: clamp(20px, 3vw, 32px);
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        /* Enhanced Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(20px, 3vw, 28px);
+            animation: slideInLeft 0.8s ease-out 0.6s both;
+        }
+
+        .filter-card, .small-card, .analysis-card, .chart-card, .map-card, .data-card, .correlation-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--gray-600);
+            border-radius: var(--border-radius-xl);
+            backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .filter-card:hover, .small-card:hover, .analysis-card:hover, .chart-card:hover, .map-card:hover, .data-card:hover, .correlation-card:hover {
+            border-color: var(--primary-500);
+            box-shadow: var(--shadow-xl);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            padding: clamp(16px, 3vw, 24px);
+            border-bottom: 1px solid var(--gray-600);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        .card-header h3, .card-header h4 {
+            color: white;
+            font-weight: 700;
+            margin: 0;
+            font-size: clamp(0.875rem, 2vw, 1.125rem);
+            letter-spacing: -0.025em;
+        }
+
+        .card-header p {
+            color: var(--gray-400);
+            font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+            margin: 4px 0 0 0;
+            font-weight: 500;
+        }
+
+        .card-header i {
+            width: 20px;
+            height: 20px;
+            color: var(--primary-500);
+            transition: transform 0.3s ease;
+        }
+
+        .card-header:hover i {
+            transform: rotate(15deg) scale(1.1);
+        }
+
+        .card-content {
+            padding: clamp(16px, 3vw, 24px);
+        }
+
+        /* Enhanced Filters */
+        .filter-group {
+            margin-bottom: 24px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .filter-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gray-300);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--gray-300);
+            padding: 8px 12px;
+            border-radius: var(--border-radius-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(59, 130, 246, 0.15);
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-500);
+            transition: transform 0.2s ease;
+            border-radius: 4px;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked {
+            transform: scale(1.1);
+        }
+
+        .select-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--gray-700);
+            border: 2px solid var(--gray-600);
+            border-radius: var(--border-radius-md);
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .select-input:focus {
+            outline: none;
+            border-color: var(--primary-500);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            background: var(--gray-600);
+        }
+
+        /* Enhanced Range Slider */
+        .range-slider {
+            position: relative;
+            margin-top: 16px;
+            height: 50px;
+        }
+
+        .range-container {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            background: var(--gray-700);
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .range-track {
+            position: absolute;
+            height: 8px;
+            background: linear-gradient(90deg, var(--primary-600), var(--primary-500));
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .slider {
+            position: absolute;
+            width: 100%;
+            height: 8px;
+            background: transparent;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            pointer-events: none;
+            top: 20px;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-500);
+            cursor: pointer;
+            pointer-events: all;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            transition: all 0.2s ease;
+            border: 3px solid white;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-500);
+            cursor: pointer;
+            border: 3px solid white;
+            pointer-events: all;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .export-btn {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
+            border: none;
+            border-radius: var(--border-radius-md);
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 12px;
+        }
+
+        .export-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, var(--primary-700), var(--primary-600));
+        }
+
+        .export-btn:hover::before {
+            left: 100%;
+        }
+
+        .export-btn i {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .export-btn:hover i {
+            transform: rotate(180deg);
+        }
+
+        /* Enhanced Distribution Cards */
+        .distribution-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .small-card .card-header h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .chart-container-small {
+            padding: 20px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Enhanced Main Panel */
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(20px, 3vw, 32px);
+            animation: slideInRight 0.8s ease-out 0.6s both;
+        }
+
+        .chart-container {
+            padding: clamp(16px, 3vw, 24px);
+            height: clamp(350px, 50vh, 450px);
+            position: relative;
+        }
+
+        /* Enhanced Tabs */
+        .tabs-container {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--gray-600);
+            border-radius: var(--border-radius-xl);
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .tabs-header {
+            display: flex;
+            border-bottom: 1px solid var(--gray-600);
+            background: rgba(15, 23, 42, 0.4);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: clamp(14px, 3vw, 20px);
+            background: transparent;
+            border: none;
+            color: var(--gray-400);
+            font-size: clamp(0.75rem, 2vw, 0.875rem);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        .tab-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: rgba(59, 130, 246, 0.1);
+            transition: width 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: white;
+            border-bottom-color: var(--primary-500);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .tab-btn.active::before {
+            width: 100%;
+        }
+
+        .tab-btn:hover:not(.active) {
+            color: var(--gray-300);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .tab-btn:hover:not(.active)::before {
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            padding: clamp(20px, 4vw, 32px);
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Enhanced Analysis Tab */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+            gap: clamp(16px, 3vw, 24px);
+            margin-bottom: clamp(24px, 4vw, 32px);
+        }
+
+        .progress-item {
+            margin-bottom: 20px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+        }
+
+        .progress-header span:first-child {
+            color: var(--gray-300);
+            font-weight: 500;
+        }
+
+        .progress-header span:last-child {
+            color: white;
+            font-weight: 700;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--gray-700);
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-600), var(--primary-500));
+            border-radius: 5px;
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: progressFill 2s ease-out;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+
+        @keyframes progressFill {
+            from { width: 0; }
+        }
+
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: var(--border-radius-md);
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .recommendation-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            transform: translateX(8px);
+            border-color: var(--primary-500);
+        }
+
+        .rec-icon {
+            width: 24px;
+            height: 24px;
+            margin-top: 2px;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .recommendation-item:hover .rec-icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        .rec-icon.green { color: var(--success-500); }
+        .rec-icon.yellow { color: var(--warning-500); }
+        .rec-icon.blue { color: var(--primary-500); }
+
+        .recommendation-item h4 {
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            letter-spacing: -0.025em;
+        }
+
+        .recommendation-item p {
+            color: var(--gray-400);
+            font-size: 0.8rem;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        /* Enhanced Insights */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+            gap: clamp(16px, 3vw, 20px);
+            margin-bottom: clamp(24px, 4vw, 32px);
+        }
+
+        .insight-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--gray-600);
+            border-radius: var(--border-radius-lg);
+            padding: 20px;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+        }
+
+        .insight-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary-500);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .insight-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .insight-icon {
+            width: 18px;
+            height: 18px;
+            color: var(--primary-500);
+        }
+
+        .insight-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .insight-value {
+            font-size: clamp(1.25rem, 3vw, 1.75rem);
+            font-weight: 800;
+            color: var(--primary-500);
+            margin-bottom: 6px;
+            letter-spacing: -0.025em;
+        }
+
+        .insight-description {
+            font-size: 0.75rem;
+            color: var(--gray-400);
+            font-weight: 500;
+        }
+
+        /* Enhanced Map Visualization */
+        .map-visualization {
+            padding: clamp(20px, 4vw, 32px);
+            height: clamp(350px, 50vh, 450px);
+            background: var(--gray-700);
+            border-radius: var(--border-radius-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .route-path {
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            right: 10%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--success-500), var(--warning-500), var(--error-500));
+            border-radius: 3px;
+            transform: translateY(-50%);
+            animation: routeGlow 3s ease-in-out infinite alternate;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+
+        @keyframes routeGlow {
+            from { box-shadow: 0 0 10px rgba(34, 197, 94, 0.5); }
+            to { box-shadow: 0 0 30px rgba(239, 68, 68, 0.8); }
+        }
+
+        .route-markers {
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            right: 10%;
+            transform: translateY(-50%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .route-marker {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--primary-500);
+            animation: markerPulse 2s ease-in-out infinite;
+            position: relative;
+            box-shadow: var(--shadow-md);
+        }
+
+        .route-marker.start {
+            background: var(--success-500);
+            border-color: #16a34a;
+        }
+
+        .route-marker.end {
+            background: var(--error-500);
+            border-color: #dc2626;
+        }
+
+        .route-marker.culvert {
+            background: var(--warning-500);
+            border-color: #d97706;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes markerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+        }
+
+        .route-info {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            right: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 16px;
+        }
+
+        .route-stat {
+            background: rgba(15, 23, 42, 0.9);
+            padding: 16px;
+            border-radius: var(--border-radius-md);
+            text-align: center;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--gray-600);
+        }
+
+        .route-stat-value {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            font-weight: 800;
+            color: white;
+            margin-bottom: 6px;
+            letter-spacing: -0.025em;
+        }
+
+        .route-stat-label {
+            font-size: 0.75rem;
+            color: var(--gray-400);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Enhanced Data Tab */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--gray-600);
+            box-shadow: var(--shadow-md);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: clamp(0.75rem, 2vw, 0.875rem);
+            min-width: 600px;
+        }
+
+        th, td {
+            padding: clamp(12px, 2vw, 16px);
+            text-align: left;
+            border-bottom: 1px solid var(--gray-600);
+            transition: all 0.3s ease;
+        }
+
+        th {
+            color: var(--gray-300);
+            font-weight: 700;
+            background: rgba(15, 23, 42, 0.9);
+            position: sticky;
+            top: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+        }
+
+        td {
+            color: white;
+            font-weight: 500;
+        }
+
+        tr:hover {
+            background: rgba(71, 85, 105, 0.3);
+            transform: scale(1.005);
+        }
+
+        /* Enhanced Footer */
+        .footer {
+            text-align: center;
+            padding-top: clamp(24px, 4vw, 40px);
+            border-top: 1px solid var(--gray-600);
+            animation: fadeInUp 1.2s ease-out 0.8s both;
+        }
+
+        .footer p {
+            color: var(--gray-400);
+            font-size: clamp(0.75rem, 2vw, 0.875rem);
+            font-weight: 500;
+            letter-spacing: 0.025em;
+        }
+
+        /* Enhanced Responsive Design */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                order: 2;
+            }
+
+            .main-panel {
+                order: 1;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 16px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .header-text {
+                text-align: center;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .insights-grid {
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            }
+
+            .tabs-header {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+            }
+
+            .tab-btn {
+                min-width: 120px;
+                flex-shrink: 0;
+            }
+
+            .chart-container {
+                height: 300px;
+                padding: 16px;
+            }
+
+            .route-info {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .action-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-container {
+                padding: 12px;
+            }
+
+            .kpi-value {
+                font-size: 1.5rem;
+            }
+
+            .chart-container {
+                height: 250px;
+                padding: 12px;
+            }
+
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .route-info {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs-header {
+                flex-direction: column;
+            }
+
+            .tab-btn {
+                min-width: auto;
+                flex-shrink: 1;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+
+            .loading {
+                display: none;
+            }
+
+            .export-btn, .action-btn {
+                display: none;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --gray-600: #000000;
+                --gray-700: #ffffff;
+                --primary-500: #0000ff;
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Enhanced Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading Highway Intelligence Dashboard...</div>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Enhanced Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <i data-lucide="route"></i>
+                </div>
+                <div class="header-text">
+                    <h1>Highway Pavement Condition Intelligence</h1>
+                    <p>Advanced Infrastructure Monitoring & Predictive Analytics Platform</p>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="action-btn primary" id="download-pdf">
+                    <i data-lucide="file-text"></i>
+                    Download PDF Report
+                </button>
+                <button class="action-btn secondary" id="export-data-header">
+                    <i data-lucide="download"></i>
+                    Export Data
+                </button>
+            </div>
+        </header>
+
+        <!-- Enhanced KPI Cards -->
+        <section class="kpi-section">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Total Length</span>
+                        <i data-lucide="map-pin" class="kpi-icon blue"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="total-length">690m</div>
+                        <p class="kpi-description">Surveyed Infrastructure Length</p>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Avg Roughness</span>
+                        <i data-lucide="activity" class="kpi-icon green"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="avg-roughness">1169 IRI</div>
+                        <span class="condition-badge" id="roughness-condition">Fair</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Avg Rutting</span>
+                        <i data-lucide="gauge" class="kpi-icon yellow"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="avg-rutting">3.1 mm</div>
+                        <span class="condition-badge" id="rutting-condition">Fair</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Avg Cracking</span>
+                        <i data-lucide="alert-triangle" class="kpi-icon red"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="avg-cracking">2.23%</div>
+                        <span class="condition-badge" id="cracking-condition">Fair</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Enhanced Main Content -->
+        <div class="main-content">
+            <!-- Enhanced Sidebar -->
+            <aside class="sidebar">
+                <!-- Enhanced Filters -->
+                <div class="filter-card">
+                    <div class="card-header">
+                        <i data-lucide="filter"></i>
+                        <div>
+                            <h3>Analysis Filters</h3>
+                            <p>Configure data parameters</p>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="filter-group">
+                            <label class="filter-label">Distress Parameters</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="param-roughness" checked>
+                                    <span>International Roughness Index (IRI)</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="param-rutting" checked>
+                                    <span>Rutting Depth (mm)</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="param-cracking">
+                                    <span>Cracking Percentage (%)</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="param-ravelling">
+                                    <span>Surface Ravelling (%)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">Traffic Lane</label>
+                            <select id="lane-selector" class="select-input">
+                                <option value="L1">Left Lane 1 (L1)</option>
+                                <option value="L2">Left Lane 2 (L2)</option>
+                                <option value="L3">Left Lane 3 (L3)</option>
+                                <option value="L4">Left Lane 4 (L4)</option>
+                                <option value="R1">Right Lane 1 (R1)</option>
+                                <option value="R2">Right Lane 2 (R2)</option>
+                                <option value="R3">Right Lane 3 (R3)</option>
+                                <option value="R4">Right Lane 4 (R4)</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">Chainage Range: <span id="range-display">247310 - 290000m</span></label>
+                            <div class="range-slider">
+                                <div class="range-container">
+                                    <div class="range-track" id="range-track"></div>
+                                </div>
+                                <input type="range" id="range-min" min="247310" max="290000" value="247310" class="slider">
+                                <input type="range" id="range-max" min="247310" max="290000" value="248000" class="slider">
+                            </div>
+                        </div>
+
+                        <button class="export-btn" id="export-data">
+                            <i data-lucide="download"></i>
+                            Export Analysis Data
+                        </button>
+                        
+                        <button class="export-btn" id="download-pdf-sidebar" style="background: linear-gradient(135deg, var(--success-500), #059669);">
+                            <i data-lucide="file-text"></i>
+                            Generate PDF Report
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Enhanced Distribution Cards -->
+                <div class="distribution-cards">
+                    <div class="small-card">
+                        <div class="card-header">
+                            <h4>Roughness Distribution</h4>
+                        </div>
+                        <div class="chart-container-small">
+                            <canvas id="roughness-pie"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="small-card">
+                        <div class="card-header">
+                            <h4>Rutting Distribution</h4>
+                        </div>
+                        <div class="chart-container-small">
+                            <canvas id="rutting-pie"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Enhanced Main Panel -->
+            <main class="main-panel">
+                <!-- Enhanced Distress Profile Chart -->
+                <div class="chart-card">
+                    <div class="card-header">
+                        <i data-lucide="trending-up"></i>
+                        <div>
+                            <h3>Distress Profile Analysis</h3>
+                            <p>Longitudinal variation of pavement distress parameters along the surveyed segment</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="distress-profile"></canvas>
+                    </div>
+                </div>
+
+                <!-- Enhanced Tabs -->
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <button class="tab-btn active" data-tab="analysis">Condition Analysis</button>
+                        <button class="tab-btn" data-tab="map">Route Visualization</button>
+                        <button class="tab-btn" data-tab="data">Detailed Data</button>
+                    </div>
+
+                    <!-- Enhanced Analysis Tab -->
+                    <div class="tab-content active" id="analysis-tab">
+                        <!-- Enhanced Insights -->
+                        <div class="insights-grid">
+                            <div class="insight-card">
+                                <div class="insight-header">
+                                    <i data-lucide="trending-up" class="insight-icon"></i>
+                                    <span class="insight-title">Deterioration Rate</span>
+                                </div>
+                                <div class="insight-value" id="deterioration-rate">2.3%</div>
+                                <div class="insight-description">Annual condition decline rate</div>
+                            </div>
+                            <div class="insight-card">
+                                <div class="insight-header">
+                                    <i data-lucide="dollar-sign" class="insight-icon"></i>
+                                    <span class="insight-title">Maintenance Cost</span>
+                                </div>
+                                <div class="insight-value" id="maintenance-cost">$45K</div>
+                                <div class="insight-description">Estimated annual maintenance budget</div>
+                            </div>
+                            <div class="insight-card">
+                                <div class="insight-header">
+                                    <i data-lucide="calendar" class="insight-icon"></i>
+                                    <span class="insight-title">Next Inspection</span>
+                                </div>
+                                <div class="insight-value" id="next-inspection">3 months</div>
+                                <div class="insight-description">Recommended inspection timeline</div>
+                            </div>
+                            <div class="insight-card">
+                                <div class="insight-header">
+                                    <i data-lucide="alert-circle" class="insight-icon"></i>
+                                    <span class="insight-title">Risk Assessment</span>
+                                </div>
+                                <div class="insight-value" id="risk-level">Medium</div>
+                                <div class="insight-description">Overall infrastructure risk level</div>
+                            </div>
+                        </div>
+
+                        <div class="analysis-grid">
+                            <div class="analysis-card">
+                                <div class="card-header">
+                                    <h3>Infrastructure Health Summary</h3>
+                                </div>
+                                <div class="card-content">
+                                    <div class="progress-item">
+                                        <div class="progress-header">
+                                            <span>Overall Pavement Health Index</span>
+                                            <span id="health-index">72%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" id="health-progress" style="width: 72%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="progress-item">
+                                        <div class="progress-header">
+                                            <span>Maintenance Priority Level</span>
+                                            <span id="priority-level">Medium</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" id="priority-progress" style="width: 60%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="progress-item">
+                                        <div class="progress-header">
+                                            <span>Traffic Safety Index</span>
+                                            <span id="safety-index">85%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" id="safety-progress" style="width: 85%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="progress-item">
+                                        <div class="progress-header">
+                                            <span>Structural Integrity Score</span>
+                                            <span id="integrity-score">78%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" id="integrity-progress" style="width: 78%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="analysis-card">
+                                <div class="card-header">
+                                    <h3>Strategic Recommendations</h3>
+                                </div>
+                                <div class="card-content">
+                                    <div class="recommendation-item">
+                                        <i data-lucide="shield" class="rec-icon green"></i>
+                                        <div>
+                                            <h4>Preventive Maintenance Program</h4>
+                                            <p>Implement scheduled preventive maintenance for segments showing fair condition ratings to prevent further deterioration</p>
+                                        </div>
+                                    </div>
+                                    <div class="recommendation-item">
+                                        <i data-lucide="alert-triangle" class="rec-icon yellow"></i>
+                                        <div>
+                                            <h4>Critical Section Monitoring</h4>
+                                            <p>Enhanced monitoring required for culvert section at chainage 247800-247900 due to elevated rutting measurements</p>
+                                        </div>
+                                    </div>
+                                    <div class="recommendation-item">
+                                        <i data-lucide="zap" class="rec-icon blue"></i>
+                                        <div>
+                                            <h4>Surface Treatment Application</h4>
+                                            <p>Consider micro-surfacing or thin overlay treatment for high roughness areas to improve ride quality</p>
+                                        </div>
+                                    </div>
+                                    <div class="recommendation-item">
+                                        <i data-lucide="wrench" class="rec-icon yellow"></i>
+                                        <div>
+                                            <h4>Drainage System Enhancement</h4>
+                                            <p>Address subsurface drainage issues to prevent water-related pavement deterioration and extend service life</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="correlation-card">
+                            <div class="card-header">
+                                <h3>Distress Correlation Analysis</h3>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="correlation-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Map Tab -->
+                    <div class="tab-content" id="map-tab">
+                        <div class="map-card">
+                            <div class="card-header">
+                                <h3>Geographic Route Visualization</h3>
+                                <p>Spatial representation of the surveyed highway segment with infrastructure elements</p>
+                            </div>
+                            <div class="map-visualization">
+                                <div class="route-path"></div>
+                                <div class="route-markers">
+                                    <div class="route-marker start" title="Survey Start Point - Chainage 247310m"></div>
+                                    <div class="route-marker" title="Intermediate Point - Chainage 247400m"></div>
+                                    <div class="route-marker" title="Intermediate Point - Chainage 247500m"></div>
+                                    <div class="route-marker" title="Intermediate Point - Chainage 247600m"></div>
+                                    <div class="route-marker" title="Intermediate Point - Chainage 247700m"></div>
+                                    <div class="route-marker culvert" title="Critical Infrastructure - Culvert at Chainage 247800m"></div>
+                                    <div class="route-marker end" title="Survey End Point - Chainage 248000m"></div>
+                                </div>
+                                <div class="route-info">
+                                    <div class="route-stat">
+                                        <div class="route-stat-value" id="map-distance">690m</div>
+                                        <div class="route-stat-label">Total Distance</div>
+                                    </div>
+                                    <div class="route-stat">
+                                        <div class="route-stat-value">26.36°N</div>
+                                        <div class="route-stat-label">Latitude</div>
+                                    </div>
+                                    <div class="route-stat">
+                                        <div class="route-stat-value">76.25°E</div>
+                                        <div class="route-stat-label">Longitude</div>
+                                    </div>
+                                    <div class="route-stat">
+                                        <div class="route-stat-value">1</div>
+                                        <div class="route-stat-label">Culvert Structure</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Data Tab -->
+                    <div class="tab-content" id="data-tab">
+                        <div class="data-card">
+                            <div class="card-header">
+                                <h3>Comprehensive Segment Analysis Data</h3>
+                                <p>Detailed pavement condition metrics for all surveyed road segments</p>
+                            </div>
+                            <div class="table-container">
+                                <table id="segments-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Chainage Range</th>
+                                            <th>Infrastructure Type</th>
+                                            <th>Roughness (IRI)</th>
+                                            <th>Rutting (mm)</th>
+                                            <th>Cracking (%)</th>
+                                            <th>Condition Rating</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="table-body">
+                                        <!-- Data will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Enhanced Footer -->
+        <footer class="footer">
+            <p>© 2024 Highway Infrastructure Condition Monitoring System | Professional Analytics Dashboard v4.0</p>
+        </footer>
+    </div>
+
+    <script>
+        // Global variables
+        let segments = [];
+        let processedData = [];
+        let filteredData = [];
+        const charts = {};
+        const currentFilters = {
+            parameters: ['roughness', 'rutting'],
+            lane: 'L1',
+            chainageRange: [247310, 248000]
+        };
+
+        // Enhanced rating system with more accurate thresholds
+        const ratingThresholds = {
+            roughness: {
+                thresholds: [800, 1200, 1800, 2500],
+                labels: ['Excellent', 'Good', 'Fair', 'Poor', 'Very Poor']
+            },
+            rutting: {
+                thresholds: [1.5, 3.0, 5.0, 8.0],
+                labels: ['Excellent', 'Good', 'Fair', 'Poor', 'Very Poor']
+            },
+            cracking: {
+                thresholds: [0.5, 2.0, 5.0, 10.0],
+                labels: ['Excellent', 'Good', 'Fair', 'Poor', 'Very Poor']
+            },
+            ravelling: {
+                thresholds: [0.2, 1.0, 3.0, 6.0],
+                labels: ['Excellent', 'Good', 'Fair', 'Poor', 'Very Poor']
+            }
+        };
+
+        // Helper functions
+        function categorizeCondition(value, parameter) {
+            const config = ratingThresholds[parameter];
+            if (!config) return 'Unknown';
+            
+            for (let i = 0; i < config.thresholds.length; i++) {
+                if (value <= config.thresholds[i]) return config.labels[i];
+            }
+            return config.labels[config.labels.length - 1];
+        }
+
+        function getConditionColor(condition) {
+            const colors = {
+                'Excellent': '#059669',
+                'Good': '#10b981',
+                'Fair': '#f59e0b',
+                'Poor': '#ef4444',
+                'Very Poor': '#8b5cf6'
+            };
+            return colors[condition] || '#6b7280';
+        }
+
+        function processData() {
+            processedData = segments.map(segment => {
+                const length = Math.abs(segment.end_chainage - segment.start_chainage);
+                return {
+                    ...segment,
+                    mid_chainage: (segment.start_chainage + segment.end_chainage) / 2,
+                    length: length,
+                    roughness_condition: categorizeCondition(segment.roughness, 'roughness'),
+                    rutting_condition: categorizeCondition(segment.rutting, 'rutting'),
+                    cracking_condition: categorizeCondition(segment.cracking * 100, 'cracking'),
+                    cracking_percent: segment.cracking * 100,
+                    ravelling_percent: segment.ravelling * 100
+                };
+            });
+        }
+
+        function filterData() {
+            filteredData = processedData.filter(segment => 
+                segment.lane === currentFilters.lane &&
+                segment.mid_chainage >= currentFilters.chainageRange[0] &&
+                segment.mid_chainage <= currentFilters.chainageRange[1]
+            );
+        }
+
+        function updateKPIs() {
+            const totalLength = filteredData.reduce((sum, segment) => sum + segment.length, 0);
+            const avgRoughness = filteredData.reduce((sum, segment) => sum + segment.roughness, 0) / filteredData.length;
+            const avgRutting = filteredData.reduce((sum, segment) => sum + segment.rutting, 0) / filteredData.length;
+            const avgCracking = filteredData.reduce((sum, segment) => sum + segment.cracking_percent, 0) / filteredData.length;
+
+            // Animate value changes
+            animateValue('total-length', parseInt(document.getElementById('total-length').textContent.replace('m', '')), totalLength, 'm');
+            animateValue('avg-roughness', parseInt(document.getElementById('avg-roughness').textContent.replace(' IRI', '')), Math.round(avgRoughness), ' IRI');
+            animateValue('avg-rutting', parseFloat(document.getElementById('avg-rutting').textContent.replace(' mm', '')), avgRutting, ' mm', 1);
+            animateValue('avg-cracking', parseFloat(document.getElementById('avg-cracking').textContent.replace('%', '')), avgCracking, '%', 2);
+
+            // Update condition badges with improved rating system
+            const roughnessCondition = categorizeCondition(avgRoughness, 'roughness');
+            const ruttingCondition = categorizeCondition(avgRutting, 'rutting');
+            const crackingCondition = categorizeCondition(avgCracking, 'cracking');
+
+            updateConditionBadge('roughness-condition', roughnessCondition);
+            updateConditionBadge('rutting-condition', ruttingCondition);
+            updateConditionBadge('cracking-condition', crackingCondition);
+
+            document.getElementById('map-distance').textContent = `${totalLength}m`;
+
+            // Update insights and health metrics
+            updateInsights(avgRoughness, avgRutting, avgCracking, totalLength);
+            updateHealthMetrics(avgRoughness, avgRutting, avgCracking);
+        }
+
+        function updateHealthMetrics(avgRoughness, avgRutting, avgCracking) {
+            // Calculate overall health index based on weighted average of conditions
+            const roughnessScore = Math.max(0, 100 - (avgRoughness / 30));
+            const ruttingScore = Math.max(0, 100 - (avgRutting * 15));
+            const crackingScore = Math.max(0, 100 - (avgCracking * 8));
+            
+            const overallHealth = Math.round((roughnessScore * 0.4 + ruttingScore * 0.3 + crackingScore * 0.3));
+            const safetyIndex = Math.round(Math.max(60, 100 - (avgRoughness / 25) - (avgRutting * 10)));
+            const integrityScore = Math.round(Math.max(50, 100 - (avgCracking * 6) - (avgRutting * 8)));
+            
+            // Determine priority level
+            let priorityLevel = 'Low';
+            let priorityPercent = 30;
+            if (overallHealth < 60) {
+                priorityLevel = 'High';
+                priorityPercent = 85;
+            } else if (overallHealth < 75) {
+                priorityLevel = 'Medium';
+                priorityPercent = 60;
+            }
+
+            // Update progress bars and values
+            animateProgressBar('health-progress', overallHealth);
+            animateProgressBar('safety-progress', safetyIndex);
+            animateProgressBar('integrity-progress', integrityScore);
+            animateProgressBar('priority-progress', priorityPercent);
+
+            document.getElementById('health-index').textContent = overallHealth + '%';
+            document.getElementById('safety-index').textContent = safetyIndex + '%';
+            document.getElementById('integrity-score').textContent = integrityScore + '%';
+            document.getElementById('priority-level').textContent = priorityLevel;
+        }
+
+        function animateProgressBar(elementId, targetWidth) {
+            const element = document.getElementById(elementId);
+            const startWidth = parseInt(element.style.width) || 0;
+            const duration = 1500;
+            const startTime = performance.now();
+            
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const currentWidth = startWidth + (targetWidth - startWidth) * easeOutCubic(progress);
+                element.style.width = currentWidth + '%';
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            
+            requestAnimationFrame(update);
+        }
+
+        function animateValue(elementId, start, end, suffix = '', decimals = 0) {
+            const element = document.getElementById(elementId);
+            const duration = 1500;
+            const startTime = performance.now();
+            
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const current = start + (end - start) * easeOutCubic(progress);
+                element.textContent = current.toFixed(decimals) + suffix;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            
+            requestAnimationFrame(update);
+        }
+
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        function updateConditionBadge(elementId, condition) {
+            const element = document.getElementById(elementId);
+            element.textContent = condition;
+            element.className = 'condition-badge ' + condition.toLowerCase().replace(' ', '-');
+            element.style.backgroundColor = getConditionColor(condition);
+        }
+
+        function updateInsights(avgRoughness, avgRutting, avgCracking, totalLength) {
+            // Calculate deterioration rate based on multiple factors
+            const deteriorationRate = ((avgRoughness / 1500) * 2 + (avgRutting / 4) * 1.5 + (avgCracking / 5) * 1.8).toFixed(1);
+            document.getElementById('deterioration-rate').textContent = deteriorationRate + '%';
+
+            // Calculate maintenance cost based on condition and length
+            const roughnessCost = avgRoughness > 1500 ? (avgRoughness - 1500) * 0.05 : 0;
+            const ruttingCost = avgRutting > 3 ? (avgRutting - 3) * 2000 : 0;
+            const crackingCost = avgCracking > 2 ? (avgCracking - 2) * 1500 : 0;
+            const baseCost = totalLength * 45;
+            const maintenanceCost = Math.round(baseCost + roughnessCost + ruttingCost + crackingCost);
+            document.getElementById('maintenance-cost').textContent = '$' + (maintenanceCost / 1000).toFixed(0) + 'K';
+
+            // Calculate next inspection timeline based on worst condition
+            let inspectionMonths = 6;
+            if (avgRoughness > 2000 || avgRutting > 5 || avgCracking > 8) {
+                inspectionMonths = 1;
+            } else if (avgRoughness > 1500 || avgRutting > 3.5 || avgCracking > 4) {
+                inspectionMonths = 2;
+            } else if (avgRoughness > 1200 || avgRutting > 2.5 || avgCracking > 2) {
+                inspectionMonths = 3;
+            }
+            document.getElementById('next-inspection').textContent = inspectionMonths + ' month' + (inspectionMonths > 1 ? 's' : '');
+
+            // Determine risk level based on comprehensive assessment
+            const riskScore = (avgRoughness / 2500 + avgRutting / 8 + avgCracking / 10) / 3;
+            const riskLevel = riskScore > 0.7 ? 'High' : riskScore > 0.4 ? 'Medium' : 'Low';
+            document.getElementById('risk-level').textContent = riskLevel;
+        }
+
+        function updateRangeSlider() {
+            const rangeMin = document.getElementById('range-min');
+            const rangeMax = document.getElementById('range-max');
+            const rangeTrack = document.getElementById('range-track');
+            
+            const min = parseInt(rangeMin.min);
+            const max = parseInt(rangeMin.max);
+            const valueMin = parseInt(rangeMin.value);
+            const valueMax = parseInt(rangeMax.value);
+            
+            const percentMin = ((valueMin - min) / (max - min)) * 100;
+            const percentMax = ((valueMax - min) / (max - min)) * 100;
+            
+            rangeTrack.style.left = percentMin + '%';
+            rangeTrack.style.width = (percentMax - percentMin) + '%';
+            
+            document.getElementById('range-display').textContent = `${valueMin} - ${valueMax}m`;
+            currentFilters.chainageRange = [valueMin, valueMax];
+        }
+
+        function createDistressProfileChart() {
+            const ctx = document.getElementById('distress-profile').getContext('2d');
+            
+            if (charts.distressProfile) {
+                charts.distressProfile.destroy();
+            }
+
+            const datasets = [];
+            const colors = {
+                roughness: '#3b82f6',
+                rutting: '#f59e0b',
+                cracking: '#ef4444',
+                ravelling: '#8b5cf6'
+            };
+
+            currentFilters.parameters.forEach(param => {
+                const data = filteredData.map(segment => ({
+                    x: segment.mid_chainage,
+                    y: param === 'cracking' || param === 'ravelling' ? segment[param + '_percent'] : segment[param]
+                }));
+
+                datasets.push({
+                    label: param.charAt(0).toUpperCase() + param.slice(1) + 
+                           (param === 'cracking' || param === 'ravelling' ? ' (%)' : 
+                            param === 'roughness' ? ' (IRI)' : ' (mm)'),
+                    data: data,
+                    borderColor: colors[param],
+                    backgroundColor: colors[param] + '20',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: colors[param],
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2
+                });
+            });
+
+            charts.distressProfile = new Chart(ctx, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeOutCubic'
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { 
+                                color: '#ffffff',
+                                usePointStyle: true,
+                                padding: 20,
+                                font: { size: 12, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#475569',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            titleFont: { size: 14, weight: '600' },
+                            bodyFont: { size: 12, weight: '500' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Chainage (meters)',
+                                color: '#ffffff',
+                                font: { size: 14, weight: '700' }
+                            },
+                            ticks: { 
+                                color: '#9ca3af',
+                                font: { size: 12, weight: '500' }
+                            },
+                            grid: { 
+                                color: '#374151',
+                                lineWidth: 1
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Distress Measurement Value',
+                                color: '#ffffff',
+                                font: { size: 14, weight: '700' }
+                            },
+                            ticks: { 
+                                color: '#9ca3af',
+                                font: { size: 12, weight: '500' }
+                            },
+                            grid: { 
+                                color: '#374151',
+                                lineWidth: 1
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        function createPieCharts() {
+            // Roughness distribution
+            const roughnessDistribution = processedData.reduce((acc, segment) => {
+                acc[segment.roughness_condition] = (acc[segment.roughness_condition] || 0) + 1;
+                return acc;
+            }, {});
+
+            const ruttingDistribution = processedData.reduce((acc, segment) => {
+                acc[segment.rutting_condition] = (acc[segment.rutting_condition] || 0) + 1;
+                return acc;
+            }, {});
+
+            createPieChart('roughness-pie', roughnessDistribution, 'Roughness');
+            createPieChart('rutting-pie', ruttingDistribution, 'Rutting');
+        }
+
+        function createPieChart(canvasId, distribution, title) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            if (charts[canvasId]) {
+                charts[canvasId].destroy();
+            }
+
+            const labels = Object.keys(distribution);
+            const data = Object.values(distribution);
+            const colors = labels.map(label => getConditionColor(label));
+
+            charts[canvasId] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        animateRotate: true,
+                        duration: 2000,
+                        easing: 'easeOutCubic'
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#475569',
+                            borderWidth: 1,
+                            cornerRadius: 8
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+
+        function createCorrelationChart() {
+            const ctx = document.getElementById('correlation-chart').getContext('2d');
+            
+            if (charts.correlation) {
+                charts.correlation.destroy();
+            }
+
+            const data = filteredData.map(segment => ({
+                x: segment.roughness,
+                y: segment.rutting
+            }));
+
+            charts.correlation = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Roughness vs Rutting Correlation',
+                        data: data,
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#3b82f6',
+                        pointRadius: 8,
+                        pointHoverRadius: 12,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeOutCubic'
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { 
+                                color: '#ffffff',
+                                font: { size: 14, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#475569',
+                            borderWidth: 1,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Roughness Index (IRI)',
+                                color: '#ffffff',
+                                font: { size: 14, weight: '700' }
+                            },
+                            ticks: { 
+                                color: '#9ca3af',
+                                font: { size: 12, weight: '500' }
+                            },
+                            grid: { 
+                                color: '#374151',
+                                lineWidth: 1
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Rutting Depth (mm)',
+                                color: '#ffffff',
+                                font: { size: 14, weight: '700' }
+                            },
+                            ticks: { 
+                                color: '#9ca3af',
+                                font: { size: 12, weight: '500' }
+                            },
+                            grid: { 
+                                color: '#374151',
+                                lineWidth: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            filteredData.forEach((segment, index) => {
+                const row = document.createElement('tr');
+                row.style.animationDelay = `${index * 0.1}s`;
+                row.innerHTML = `
+                    <td>${segment.start_chainage}-${segment.end_chainage}m</td>
+                    <td>${segment.structure}</td>
+                    <td>${Math.round(segment.roughness)} IRI</td>
+                    <td>${segment.rutting.toFixed(1)} mm</td>
+                    <td>${segment.cracking_percent.toFixed(2)}%</td>
+                    <td>
+                        <span class="condition-badge ${segment.roughness_condition.toLowerCase().replace(' ', '-')}" 
+                              style="background-color: ${getConditionColor(segment.roughness_condition)}">
+                            ${segment.roughness_condition}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function exportData() {
+            const exportData = {
+                metadata: {
+                    exportDate: new Date().toISOString(),
+                    totalSegments: filteredData.length,
+                    filters: currentFilters,
+                    summary: {
+                        totalLength: filteredData.reduce((sum, segment) => sum + segment.length, 0),
+                        avgRoughness: filteredData.reduce((sum, segment) => sum + segment.roughness, 0) / filteredData.length,
+                        avgRutting: filteredData.reduce((sum, segment) => sum + segment.rutting, 0) / filteredData.length,
+                        avgCracking: filteredData.reduce((sum, segment) => sum + segment.cracking_percent, 0) / filteredData.length
+                    }
+                },
+                segments: filteredData
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `highway-condition-analysis-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function generatePDFReport() {
+    try {
+        // Enhanced loading state with modern animation
+        const buttons = document.querySelectorAll('#download-pdf, #download-pdf-sidebar');
+        buttons.forEach(btn => {
+            btn.innerHTML = '<i data-lucide="loader-2"></i> Generating Professional Report...';
+            btn.disabled = true;
+            btn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+            btn.style.transform = 'scale(0.98)';
+        });
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        // PDF dimensions
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 20;
+        let yPosition = margin;
+        let pageNumber = 1;
+
+        // Professional Color Palette - Modern Corporate Design
+        const colors = {
+            // Primary Brand Colors
+            primary: {
+                main: [30, 64, 175],        // Deep Blue
+                light: [147, 197, 253],     // Light Blue
+                dark: [15, 23, 42],         // Navy
+                accent: [99, 102, 241]      // Indigo
+            },
+            // Secondary Colors
+            secondary: {
+                main: [139, 92, 246],       // Purple
+                light: [196, 181, 253],     // Light Purple
+                dark: [91, 33, 182],        // Deep Purple
+                accent: [168, 85, 247]      // Violet
+            },
+            // Status Colors
+            status: {
+                excellent: [5, 150, 105],   // Emerald
+                good: [16, 185, 129],       // Green
+                fair: [245, 158, 11],       // Amber
+                poor: [239, 68, 68],        // Red
+                critical: [153, 27, 27],    // Dark Red
+                warning: [217, 119, 6]      // Orange
+            },
+            // Neutral Colors
+            neutral: {
+                white: [255, 255, 255],
+                light: [248, 250, 252],     // Very Light Gray
+                gray100: [241, 245, 249],   // Light Gray
+                gray300: [203, 213, 225],   // Medium Gray
+                gray500: [100, 116, 139],   // Gray
+                gray700: [51, 65, 85],      // Dark Gray
+                gray900: [15, 23, 42],      // Very Dark
+                black: [0, 0, 0]
+            },
+            // Gradient Colors
+            gradients: {
+                primary: [[30, 64, 175], [99, 102, 241]],
+                success: [[5, 150, 105], [16, 185, 129]],
+                warning: [[245, 158, 11], [217, 119, 6]],
+                danger: [[239, 68, 68], [153, 27, 27]]
+            }
+        };
+
+        // Enhanced Helper Functions
+        function checkPageBreak(requiredHeight) {
+            if (yPosition + requiredHeight > pageHeight - margin - 15) {
+                addFooter();
+                pdf.addPage();
+                addHeader();
+                yPosition = margin + 25;
+                pageNumber++;
+                return true;
+            }
+            return false;
+        }
+
+        function addHeader() {
+            // Modern header with gradient effect
+            addGradientBox(0, 0, pageWidth, 20, colors.gradients.primary);
+            
+            // Company logo area (placeholder)
+            pdf.setFillColor(...colors.neutral.white);
+            pdf.circle(15, 10, 6, 'F');
+            pdf.setTextColor(...colors.primary.main);
+            pdf.setFontSize(8);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('HI', 12, 12);
+            
+            // Header text
+            pdf.setTextColor(...colors.neutral.white);
+            pdf.setFontSize(10);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('HIGHWAY INTELLIGENCE PLATFORM', 25, 12);
+            
+            pdf.setFontSize(8);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text('Professional Infrastructure Analytics', 25, 16);
+        }
+
+        function addFooter() {
+            const footerY = pageHeight - 15;
+            
+            // Footer line
+            pdf.setDrawColor(...colors.neutral.gray300);
+            pdf.setLineWidth(0.5);
+            pdf.line(margin, footerY, pageWidth - margin, footerY);
+            
+            // Footer content
+            pdf.setTextColor(...colors.neutral.gray500);
+            pdf.setFontSize(8);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text('Highway Pavement Condition Intelligence Report', margin, footerY + 5);
+            
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(`Page ${pageNumber}`, pageWidth - margin - 15, footerY + 5);
+            
+            pdf.setFont('helvetica', 'italic');
+            pdf.text(`Generated: ${new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            })}`, pageWidth - margin - 50, footerY + 9);
+        }
+
+        function addGradientBox(x, y, width, height, gradientColors) {
+            // Simulate gradient with multiple rectangles
+            const steps = 20;
+            const stepHeight = height / steps;
+            
+            for (let i = 0; i < steps; i++) {
+                const ratio = i / (steps - 1);
+                const color = interpolateColor(gradientColors[0], gradientColors[1], ratio);
+                pdf.setFillColor(...color);
+                pdf.rect(x, y + (i * stepHeight), width, stepHeight, 'F');
+            }
+        }
+
+        function interpolateColor(color1, color2, ratio) {
+            return [
+                Math.round(color1[0] + (color2[0] - color1[0]) * ratio),
+                Math.round(color1[1] + (color2[1] - color1[1]) * ratio),
+                Math.round(color1[2] + (color2[2] - color1[2]) * ratio)
+            ];
+        }
+
+        function addModernCard(x, y, width, height, title, content, accentColor = colors.primary.main) {
+            // Card shadow effect
+            pdf.setFillColor(0, 0, 0);
+            pdf.setGState(new pdf.GState({opacity: 0.1}));
+            pdf.rect(x + 1, y + 1, width, height, 'F');
+            pdf.setGState(new pdf.GState({opacity: 1}));
+            
+            // Card background
+            pdf.setFillColor(...colors.neutral.white);
+            pdf.rect(x, y, width, height, 'F');
+            
+            // Accent border
+            pdf.setFillColor(...accentColor);
+            pdf.rect(x, y, 3, height, 'F');
+            
+            // Card border
+            pdf.setDrawColor(...colors.neutral.gray300);
+            pdf.setLineWidth(0.5);
+            pdf.rect(x, y, width, height, 'S');
+            
+            // Title
+            if (title) {
+                pdf.setTextColor(...colors.neutral.gray900);
+                pdf.setFontSize(11);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(title, x + 8, y + 8);
+            }
+            
+            return { contentX: x + 8, contentY: y + (title ? 15 : 8) };
+        }
+
+        function addStatusBadge(x, y, text, status) {
+            const statusColors = {
+                'Excellent': colors.status.excellent,
+                'Good': colors.status.good,
+                'Fair': colors.status.fair,
+                'Poor': colors.status.poor,
+                'Very Poor': colors.status.critical,
+                'CRITICAL': colors.status.critical,
+                'HIGH': colors.status.warning,
+                'MEDIUM': colors.primary.main,
+                'LOW': colors.status.good
+            };
+            
+            const badgeColor = statusColors[status] || colors.neutral.gray500;
+            const textWidth = pdf.getTextWidth(text);
+            const badgeWidth = textWidth + 8;
+            
+            // Badge background
+            pdf.setFillColor(...badgeColor);
+            pdf.roundedRect(x, y - 3, badgeWidth, 8, 2, 2, 'F');
+            
+            // Badge text
+            pdf.setTextColor(...colors.neutral.white);
+            pdf.setFontSize(8);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(text, x + 4, y + 1);
+            
+            return badgeWidth;
+        }
+
+        function addMetricCard(x, y, width, height, label, value, unit, condition, icon = null) {
+            const card = addModernCard(x, y, width, height, null, null, colors.primary.light);
+            
+            // Icon area (if provided)
+            if (icon) {
+                pdf.setFillColor(...colors.primary.light);
+                pdf.circle(card.contentX + 8, card.contentY + 8, 6, 'F');
+                pdf.setTextColor(...colors.primary.main);
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(icon, card.contentX + 6, card.contentY + 10);
+            }
+            
+            // Label
+            pdf.setTextColor(...colors.neutral.gray700);
+            pdf.setFontSize(9);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text(label, card.contentX + (icon ? 20 : 0), card.contentY + 5);
+            
+            // Value
+            pdf.setTextColor(...colors.neutral.gray900);
+            pdf.setFontSize(16);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(`${value}${unit}`, card.contentX + (icon ? 20 : 0), card.contentY + 15);
+            
+            // Condition badge
+            addStatusBadge(card.contentX + (icon ? 20 : 0), card.contentY + 22, condition, condition);
+        }
+
+        function addProgressBar(x, y, width, percentage, label, color = colors.primary.main) {
+            // Label
+            pdf.setTextColor(...colors.neutral.gray700);
+            pdf.setFontSize(9);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text(label, x, y);
+            
+            // Percentage
+            pdf.setTextColor(...colors.neutral.gray900);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(`${percentage}%`, x + width - 15, y);
+            
+            // Progress bar background
+            pdf.setFillColor(...colors.neutral.gray100);
+            pdf.roundedRect(x, y + 3, width, 4, 1, 1, 'F');
+            
+            // Progress bar fill
+            const fillWidth = (width * percentage) / 100;
+            pdf.setFillColor(...color);
+            pdf.roundedRect(x, y + 3, fillWidth, 4, 1, 1, 'F');
+        }
+
+        // Calculate comprehensive metrics
+        const totalLength = filteredData.reduce((sum, segment) => sum + segment.length, 0);
+        const avgRoughness = filteredData.reduce((sum, segment) => sum + segment.roughness, 0) / filteredData.length;
+        const avgRutting = filteredData.reduce((sum, segment) => sum + segment.rutting, 0) / filteredData.length;
+        const avgCracking = filteredData.reduce((sum, segment) => sum + segment.cracking_percent, 0) / filteredData.length;
+        
+        // Advanced health calculations
+        const roughnessScore = Math.max(0, 100 - (avgRoughness / 30));
+        const ruttingScore = Math.max(0, 100 - (avgRutting * 15));
+        const crackingScore = Math.max(0, 100 - (avgCracking * 8));
+        const healthIndex = Math.round((roughnessScore * 0.4 + ruttingScore * 0.3 + crackingScore * 0.3));
+        
+        const riskScore = (avgRoughness / 2500 + avgRutting / 8 + avgCracking / 10) / 3;
+        const riskLevel = riskScore > 0.7 ? 'HIGH' : riskScore > 0.4 ? 'MEDIUM' : 'LOW';
+
+        // Generate intelligent action items
+        const actionItems = generateActionItems(avgRoughness, avgRutting, avgCracking, filteredData);
+
+        // Add header to first page
+        addHeader();
+        yPosition = margin + 25;
+
+        // TITLE PAGE WITH MODERN DESIGN
+        // Hero section with gradient
+        addGradientBox(0, yPosition, pageWidth, 60, colors.gradients.primary);
+        
+        // Main title
+        pdf.setTextColor(...colors.neutral.white);
+        pdf.setFontSize(28);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('HIGHWAY PAVEMENT', margin, yPosition + 20);
+        pdf.text('INTELLIGENCE REPORT', margin, yPosition + 35);
+        
+        // Subtitle
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Professional Infrastructure Condition Analysis', margin, yPosition + 50);
+        
+        yPosition += 80;
+
+        // Executive Summary Card
+        checkPageBreak(80);
+        const summaryCard = addModernCard(margin, yPosition, pageWidth - 2 * margin, 70, 
+            'EXECUTIVE SUMMARY', null, colors.primary.main);
+        
+        // Health status with visual indicator
+        pdf.setTextColor(...colors.neutral.gray900);
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Infrastructure Health Assessment', summaryCard.contentX, summaryCard.contentY);
+        
+        // Health index with color coding
+        const healthColor = healthIndex > 80 ? colors.status.excellent : 
+                           healthIndex > 60 ? colors.status.good : 
+                           healthIndex > 40 ? colors.status.fair : colors.status.poor;
+        
+        pdf.setTextColor(...healthColor);
+        pdf.setFontSize(24);
+        pdf.text(`${healthIndex}%`, summaryCard.contentX, summaryCard.contentY + 15);
+        
+        pdf.setTextColor(...colors.neutral.gray700);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Overall Health Index', summaryCard.contentX + 30, summaryCard.contentY + 10);
+        
+        // Key metrics summary
+        const summaryText = [
+            `Risk Level: ${riskLevel} | Analyzed Lane: ${currentFilters.lane}`,
+            `Total Length: ${totalLength}m | Segments: ${filteredData.length}`,
+            `Survey Range: ${currentFilters.chainageRange[0]} - ${currentFilters.chainageRange[1]}m`
+        ];
+        
+        summaryText.forEach((text, index) => {
+            pdf.text(text, summaryCard.contentX, summaryCard.contentY + 25 + (index * 6));
+        });
+        
+        yPosition += 85;
+
+        // KPI DASHBOARD SECTION
+        checkPageBreak(100);
+        pdf.setTextColor(...colors.primary.main);
+        pdf.setFontSize(18);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('KEY PERFORMANCE INDICATORS', margin, yPosition);
+        yPosition += 20;
+
+        // KPI Cards in a grid
+        const kpiWidth = (pageWidth - 2 * margin - 20) / 3;
+        const kpis = [
+            { 
+                label: 'Roughness Index', 
+                value: Math.round(avgRoughness), 
+                unit: ' IRI',
+                condition: categorizeCondition(avgRoughness, 'roughness'),
+                icon: 'R'
+            },
+            { 
+                label: 'Rutting Depth', 
+                value: avgRutting.toFixed(1), 
+                unit: 'mm',
+                condition: categorizeCondition(avgRutting, 'rutting'),
+                icon: 'D'
+            },
+            { 
+                label: 'Cracking Level', 
+                value: avgCracking.toFixed(1), 
+                unit: '%',
+                condition: categorizeCondition(avgCracking, 'cracking'),
+                icon: 'C'
+            }
+        ];
+
+        kpis.forEach((kpi, index) => {
+            const xPos = margin + (index * (kpiWidth + 10));
+            addMetricCard(xPos, yPosition, kpiWidth, 35, kpi.label, kpi.value, kpi.unit, kpi.condition, kpi.icon);
+        });
+        yPosition += 50;
+
+        // HEALTH METRICS SECTION
+        checkPageBreak(60);
+        const healthCard = addModernCard(margin, yPosition, pageWidth - 2 * margin, 50, 
+            'INFRASTRUCTURE HEALTH METRICS', null, colors.status.good);
+        
+        const healthMetrics = [
+            { label: 'Pavement Health Index', value: healthIndex, color: healthColor },
+            { label: 'Traffic Safety Score', value: Math.round(Math.max(60, 100 - (avgRoughness / 25))), color: colors.status.good },
+            { label: 'Structural Integrity', value: Math.round(Math.max(50, 100 - (avgCracking * 6))), color: colors.primary.main },
+            { label: 'Maintenance Priority', value: riskLevel === 'HIGH' ? 85 : riskLevel === 'MEDIUM' ? 60 : 30, color: colors.status.warning }
+        ];
+
+        healthMetrics.forEach((metric, index) => {
+            const yPos = healthCard.contentY + (index * 10);
+            addProgressBar(healthCard.contentX, yPos, 140, metric.value, metric.label, metric.color);
+        });
+        yPosition += 65;
+
+        // NEW PAGE FOR ACTION PLAN
+        pdf.addPage();
+        addHeader();
+        yPosition = margin + 25;
+
+        // ACTION PLAN HEADER
+        addGradientBox(0, yPosition, pageWidth, 30, colors.gradients.warning);
+        pdf.setTextColor(...colors.neutral.white);
+        pdf.setFontSize(22);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('PRIORITY ACTION PLAN', margin, yPosition + 15);
+        
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text('Intelligent maintenance recommendations based on comprehensive analysis', margin, yPosition + 22);
+        yPosition += 45;
+
+        // Action items with modern cards
+        actionItems.forEach((item, index) => {
+            checkPageBreak(45);
+            
+            const priorityColors = {
+                'CRITICAL': colors.status.critical,
+                'HIGH': colors.status.warning,
+                'MEDIUM': colors.primary.main,
+                'LOW': colors.status.good
+            };
+            
+            const itemCard = addModernCard(margin, yPosition, pageWidth - 2 * margin, 40, 
+                null, null, priorityColors[item.priority]);
+            
+            // Priority badge
+            const badgeWidth = addStatusBadge(itemCard.contentX, itemCard.contentY + 2, 
+                `${index + 1}. ${item.priority}`, item.priority);
+            
+            // Title
+            pdf.setTextColor(...colors.neutral.gray900);
+            pdf.setFontSize(12);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(item.title, itemCard.contentX, itemCard.contentY + 12);
+            
+            // Description
+            pdf.setTextColor(...colors.neutral.gray700);
+            pdf.setFontSize(9);
+            pdf.setFont('helvetica', 'normal');
+            const descLines = pdf.splitTextToSize(item.description, pageWidth - 2 * margin - 20);
+            pdf.text(descLines, itemCard.contentX, itemCard.contentY + 20);
+            
+            // Action details
+            const details = [
+                { label: 'Timeline:', value: item.timeline, color: colors.primary.main },
+                { label: 'Cost:', value: item.cost, color: colors.status.warning },
+                { label: 'Impact:', value: item.impact, color: colors.status.good }
+            ];
+            
+            details.forEach((detail, detailIndex) => {
+                const xPos = itemCard.contentX + (detailIndex * 50);
+                pdf.setTextColor(...detail.color);
+                pdf.setFontSize(8);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(detail.label, xPos, itemCard.contentY + 32);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text(detail.value, xPos, itemCard.contentY + 36);
+            });
+            
+            yPosition += 45;
+        });
+
+        // CHART VISUALIZATION
+        checkPageBreak(90);
+        const chartCard = addModernCard(margin, yPosition, pageWidth - 2 * margin, 80, 
+            'DISTRESS PROFILE ANALYSIS', null, colors.secondary.main);
+        
+        const chartCanvas = document.getElementById('distress-profile');
+        if (chartCanvas) {
+            const chartImage = chartCanvas.toDataURL('image/png');
+            pdf.addImage(chartImage, 'PNG', chartCard.contentX, chartCard.contentY, 
+                pageWidth - 2 * margin - 16, 60);
+        }
+        yPosition += 85;
+
+        // DATA TABLE PAGE
+        if (filteredData.length > 0) {
+            pdf.addPage();
+            addHeader();
+            yPosition = margin + 25;
+            
+            // Table header
+            pdf.setTextColor(...colors.primary.main);
+            pdf.setFontSize(18);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('DETAILED SEGMENT ANALYSIS', margin, yPosition);
+            yPosition += 20;
+
+            // Modern table
+            const tableCard = addModernCard(margin, yPosition, pageWidth - 2 * margin, 
+                Math.min(200, filteredData.length * 8 + 20), 'Comprehensive Segment Data', null, colors.secondary.main);
+            
+            // Table headers
+            const headers = ['Chainage Range', 'Type', 'Roughness', 'Rutting', 'Cracking', 'Condition'];
+            const colWidths = [35, 25, 25, 20, 20, 30];
+            
+            // Header row with background
+            pdf.setFillColor(...colors.neutral.gray900);
+            pdf.rect(tableCard.contentX, tableCard.contentY, pageWidth - 2 * margin - 16, 10, 'F');
+            
+            pdf.setTextColor(...colors.neutral.white);
+            pdf.setFontSize(9);
+            pdf.setFont('helvetica', 'bold');
+            
+            let xPos = tableCard.contentX + 2;
+            headers.forEach((header, i) => {
+                pdf.text(header, xPos, tableCard.contentY + 6);
+                xPos += colWidths[i];
+            });
+            
+            let tableY = tableCard.contentY + 15;
+
+            // Data rows
+            filteredData.forEach((segment, rowIndex) => {
+                if (tableY > pageHeight - 40) {
+                    pdf.addPage();
+                    addHeader();
+                    tableY = margin + 25;
+                }
+                
+                // Alternating row colors
+                if (rowIndex % 2 === 0) {
+                    pdf.setFillColor(...colors.neutral.gray100);
+                    pdf.rect(tableCard.contentX, tableY - 2, pageWidth - 2 * margin - 16, 8, 'F');
+                }
+                
+                xPos = tableCard.contentX + 2;
+                const rowData = [
+                    `${segment.start_chainage}-${segment.end_chainage}m`,
+                    segment.structure,
+                    `${Math.round(segment.roughness)} IRI`,
+                    `${segment.rutting.toFixed(1)}mm`,
+                    `${segment.cracking_percent.toFixed(1)}%`,
+                    segment.roughness_condition
+                ];
+
+                rowData.forEach((data, i) => {
+                    if (i === 5) { // Condition column
+                        const condColor = getConditionColor(data);
+                        const rgbColor = hexToRgb(condColor);
+                        pdf.setTextColor(rgbColor[0], rgbColor[1], rgbColor[2]);
+                        pdf.setFont('helvetica', 'bold');
+                    } else {
+                        pdf.setTextColor(...colors.neutral.gray900);
+                        pdf.setFont('helvetica', 'normal');
+                    }
+                    pdf.setFontSize(8);
+                    pdf.text(data, xPos, tableY + 2);
+                    xPos += colWidths[i];
+                });
+                tableY += 8;
+            });
+        }
+
+        // FINAL SUMMARY PAGE
+        pdf.addPage();
+        addHeader();
+        yPosition = margin + 25;
+        
+        // Summary header
+        addGradientBox(0, yPosition, pageWidth, 35, colors.gradients.success);
+        pdf.setTextColor(...colors.neutral.white);
+        pdf.setFontSize(20);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('REPORT SUMMARY & RECOMMENDATIONS', margin, yPosition + 20);
+        yPosition += 50;
+
+        // Key findings
+        const findingsCard = addModernCard(margin, yPosition, pageWidth - 2 * margin, 60, 
+            'KEY FINDINGS & NEXT STEPS', null, colors.status.good);
+        
+        const criticalItems = actionItems.filter(item => item.priority === 'CRITICAL').length;
+        const highItems = actionItems.filter(item => item.priority === 'HIGH').length;
+        
+        const findings = [
+            `Infrastructure Health Index: ${healthIndex}% (${healthIndex > 70 ? 'Good' : healthIndex > 50 ? 'Fair' : 'Poor'})`,
+            `Risk Assessment Level: ${riskLevel}`,
+            `Total Action Items Generated: ${actionItems.length}`,
+            `Critical Priority Actions: ${criticalItems}`,
+            `High Priority Actions: ${highItems}`,
+            `Recommended Next Inspection: ${avgRoughness > 1500 ? '2-3 months' : '6 months'}`
+        ];
+        
+        findings.forEach((finding, index) => {
+            pdf.setTextColor(...colors.neutral.gray900);
+            pdf.setFontSize(10);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text(`• ${finding}`, findingsCard.contentX, findingsCard.contentY + (index * 8));
+        });
+        
+        yPosition += 75;
+
+        // Professional closing
+        const closingCard = addModernCard(margin, yPosition, pageWidth - 2 * margin, 40, 
+            null, null, colors.primary.light);
+        
+        pdf.setTextColor(...colors.neutral.gray700);
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'italic');
+        pdf.text('This comprehensive analysis provides data-driven insights for optimal', 
+            closingCard.contentX, closingCard.contentY + 5);
+        pdf.text('infrastructure management and strategic maintenance planning.', 
+            closingCard.contentX, closingCard.contentY + 12);
+        
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...colors.primary.main);
+        pdf.text('Highway Intelligence Platform - Professional Analytics Division', 
+            closingCard.contentX, closingCard.contentY + 25);
+
+        // Add footer to last page
+        addFooter();
+
+        // Save with professional filename
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `Highway-Intelligence-Report-${currentFilters.lane}-${timestamp}.pdf`;
+        pdf.save(filename);
+
+        // Success feedback with animation
+        buttons.forEach(btn => {
+            btn.innerHTML = '<i data-lucide="check-circle"></i> Professional Report Generated!';
+            btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            btn.style.transform = 'scale(1)';
+            btn.disabled = false;
+            
+            setTimeout(() => {
+                btn.innerHTML = '<i data-lucide="file-text"></i> Download PDF Report';
+                btn.style.background = 'linear-gradient(135deg, var(--primary-600), var(--primary-500))';
+            }, 4000);
+        });
+
+        lucide.createIcons();
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        
+        const buttons = document.querySelectorAll('#download-pdf, #download-pdf-sidebar');
+        buttons.forEach(btn => {
+            btn.innerHTML = '<i data-lucide="alert-circle"></i> Generation Failed - Retry';
+            btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            btn.style.transform = 'scale(1)';
+            btn.disabled = false;
+            
+            setTimeout(() => {
+                btn.innerHTML = '<i data-lucide="file-text"></i> Download PDF Report';
+                btn.style.background = 'linear-gradient(135deg, var(--primary-600), var(--primary-500))';
+            }, 4000);
+        });
+        lucide.createIcons();
+    }
+}
+
+// Enhanced action items generation function
+function generateActionItems(avgRoughness, avgRutting, avgCracking, segments) {
+    const actionItems = [];
+    
+    // Critical priority items
+    if (avgRoughness > 2000) {
+        actionItems.push({
+            priority: 'CRITICAL',
+            title: 'Emergency Roughness Intervention',
+            description: `Immediate surface treatment required. Average IRI of ${Math.round(avgRoughness)} significantly exceeds acceptable limits (>2000). Risk of vehicle damage and safety hazards.`,
+            timeline: '1-2 weeks',
+            cost: '$15-25K',
+            impact: 'Safety & Legal Compliance'
+        });
+    }
+    
+    if (avgRutting > 6) {
+        actionItems.push({
+            priority: 'CRITICAL',
+            title: 'Severe Rutting Emergency Repair',
+            description: `Critical rutting depth of ${avgRutting.toFixed(1)}mm poses immediate safety risk. Water pooling and hydroplaning potential.`,
+            timeline: '1-2 weeks',
+            cost: '$20-35K',
+            impact: 'Safety & Drainage'
+        });
+    }
+
+    // High priority items
+    if (avgRoughness > 1500 && avgRoughness <= 2000) {
+        actionItems.push({
+            priority: 'HIGH',
+            title: 'Surface Treatment Program',
+            description: 'Implement micro-surfacing or thin overlay treatment to restore ride quality and prevent further deterioration.',
+            timeline: '4-8 weeks',
+            cost: '$8-15K',
+            impact: 'Comfort & Asset Life'
+        });
+    }
+
+    if (avgRutting > 4 && avgRutting <= 6) {
+        actionItems.push({
+            priority: 'HIGH',
+            title: 'Targeted Rutting Correction',
+            description: 'Mill and overlay operations in severely rutted sections to restore proper drainage and safety.',
+            timeline: '4-8 weeks',
+            cost: '$12-20K',
+            impact: 'Safety & Performance'
+        });
+    }
+
+    // Culvert-specific actions
+    const culvertSections = segments.filter(segment => segment.structure === 'Culvert');
+    if (culvertSections.length > 0) {
+        const avgCulvertCondition = culvertSections.reduce((sum, seg) => sum + seg.rutting, 0) / culvertSections.length;
+        if (avgCulvertCondition > 3.5) {
+            actionItems.push({
+                priority: 'HIGH',
+                title: 'Infrastructure Transition Zone Repair',
+                description: `Enhanced attention required for culvert transition zones. Elevated distress levels detected at chainage ${culvertSections[0].start_chainage}-${culvertSections[0].end_chainage}m.`,
+                timeline: '3-6 weeks',
+                cost: '$5-10K',
+                impact: 'Structural Integrity'
+            });
+        }
+    }
+
+    // Medium priority items
+    if (avgCracking > 3) {
+        actionItems.push({
+            priority: 'MEDIUM',
+            title: 'Comprehensive Crack Sealing',
+            description: 'Systematic crack sealing program to prevent water infiltration and extend pavement life.',
+            timeline: '2-3 months',
+            cost: '$3-6K',
+            impact: 'Longevity & Water Protection'
+        });
+    }
+
+    actionItems.push({
+        priority: 'MEDIUM',
+        title: 'Drainage System Enhancement',
+        description: 'Evaluate and improve subsurface drainage systems to prevent moisture-related deterioration.',
+        timeline: '3-6 months',
+        cost: '$8-15K',
+        impact: 'Long-term Durability'
+    });
+
+    // Low priority items
+    actionItems.push({
+        priority: 'LOW',
+        title: 'Preventive Maintenance Protocol',
+        description: 'Establish systematic preventive maintenance schedule with performance-based triggers.',
+        timeline: '6-12 months',
+        cost: '$2-5K',
+        impact: 'Cost Optimization'
+    });
+
+    actionItems.push({
+        priority: 'LOW',
+        title: 'Advanced Monitoring Implementation',
+        description: 'Deploy IoT sensors and continuous monitoring systems for real-time condition assessment.',
+        timeline: '6-18 months',
+        cost: '$10-25K',
+        impact: 'Data-Driven Management'
+    });
+
+    return actionItems;
+}
+
+// Helper function for color conversion
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+    ] : [100, 100, 100];
+}
+
+        function updateDashboard() {
+            filterData();
+            updateKPIs();
+            createDistressProfileChart();
+            createCorrelationChart();
+            updateTable();
+        }
+
+        // Load data from JSON file
+        async function loadData() {
+            try {
+                const response = await fetch('data.json');
+                const data = await response.json();
+
+                // Check if data is an array or object with segments
+                if (Array.isArray(data)) {
+                    segments = data.map(item => ({
+                        ...item,
+                        start_lat: item.start[0],
+                        start_lon: item.start[1],
+                        end_lat: item.end[0],
+                        end_lon: item.end[1]
+                    }));
+                } else if (data.segments) {
+                    segments = data.segments.map(item => ({
+                        ...item,
+                        start_lat: item.start[0],
+                        start_lon: item.start[1],
+                        end_lat: item.end[0],
+                        end_lon: item.end[1]
+                    }));
+                } else {
+                    throw new Error("Invalid data format in data.json");
+                }
+                
+                processData();
+                updateDashboard();
+                createPieCharts();
+            } catch (error) {
+                console.error('Error loading data:', error);
+
+                // Fallback to enhanced hardcoded segments
+                segments = [
+                    {
+                        "lane": "L1",
+                        "start_lat": 26.36114,
+                        "start_lon": 76.25048,
+                        "end_lat": 26.36034,
+                        "end_lon": 76.25034,
+                        "start_chainage": 247310,
+                        "end_chainage": 247400,
+                        "structure": "Normal Road",
+                        "roughness": 1127.0,
+                        "rutting": 2.1,
+                        "cracking": 0.018,
+                        "ravelling": 0.002
+                    },
+                    {
+                        "lane": "L1",
+                        "start_lat": 26.36034,
+                        "start_lon": 76.25034,
+                        "end_lat": 26.35954,
+                        "end_lon": 76.25020,
+                        "start_chainage": 247400,
+                        "end_chainage": 247500,
+                        "structure": "Normal Road",
+                        "roughness": 956.0,
+                        "rutting": 1.8,
+                        "cracking": 0.012,
+                        "ravelling": 0.001
+                    },
+                    {
+                        "lane": "L1",
+                        "start_lat": 26.35954,
+                        "start_lon": 76.25020,
+                        "end_lat": 26.35874,
+                        "end_lon": 76.25006,
+                        "start_chainage": 247500,
+                        "end_chainage": 247600,
+                        "structure": "Normal Road",
+                        "roughness": 1323.0,
+                        "rutting": 2.8,
+                        "cracking": 0.025,
+                        "ravelling": 0.003
+                    },
+                    {
+                        "lane": "L1",
+                        "start_lat": 26.35874,
+                        "start_lon": 76.25006,
+                        "end_lat": 26.35794,
+                        "end_lon": 76.24992,
+                        "start_chainage": 247600,
+                        "end_chainage": 247700,
+                        "structure": "Normal Road",
+                        "roughness": 1087.0,
+                        "rutting": 2.3,
+                        "cracking": 0.019,
+                        "ravelling": 0.002
+                    },
+                    {
+                        "lane": "L1",
+                        "start_lat": 26.35794,
+                        "start_lon": 76.24992,
+                        "end_lat": 26.35714,
+                        "end_lon": 76.24978,
+                        "start_chainage": 247700,
+                        "end_chainage": 247800,
+                        "structure": "Normal Road",
+                        "roughness": 1434.0,
+                        "rutting": 3.2,
+                        "cracking": 0.031,
+                        "ravelling": 0.005
+                    },
+                    {
+                        "lane": "L1",
+                        "start_lat": 26.35714,
+                        "start_lon": 76.24978,
+                        "end_lat": 26.35634,
+                        "end_lon": 76.24964,
+                        "start_chainage": 247800,
+                        "end_chainage": 247900,
+                        "structure": "Culvert",
+                        "roughness": 1678.0,
+                        "rutting": 4.2,
+                        "cracking": 0.047,
+                        "ravelling": 0.008
+                    },
+                    {
+                        "lane": "L1",
+                        "start_lat": 26.35634,
+                        "start_lon": 76.24964,
+                        "end_lat": 26.35554,
+                        "end_lon": 76.24950,
+                        "start_chainage": 247900,
+                        "end_chainage": 248000,
+                        "structure": "Normal Road",
+                        "roughness": 1245.0,
+                        "rutting": 2.9,
+                        "cracking": 0.028,
+                        "ravelling": 0.004
+                    }
+                ];
+
+                processData();
+                updateDashboard();
+                createPieCharts();
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hide loading screen after a delay
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+            }, 2000);
+
+            // Initialize Lucide icons
+            lucide.createIcons();
+
+            // Load data
+            loadData();
+
+            // Parameter checkboxes
+            document.querySelectorAll('input[type="checkbox"][id^="param-"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const param = this.id.replace('param-', '');
+                    if (this.checked) {
+                        if (!currentFilters.parameters.includes(param)) {
+                            currentFilters.parameters.push(param);
+                        }
+                    } else {
+                        currentFilters.parameters = currentFilters.parameters.filter(p => p !== param);
+                    }
+                    updateDashboard();
+                });
+            });
+
+            // Lane selector
+            document.getElementById('lane-selector').addEventListener('change', function() {
+                currentFilters.lane = this.value;
+                updateDashboard();
+            });
+
+            // Range sliders with improved functionality
+            const rangeMin = document.getElementById('range-min');
+            const rangeMax = document.getElementById('range-max');
+
+            function handleRangeUpdate() {
+                let minVal = parseInt(rangeMin.value);
+                let maxVal = parseInt(rangeMax.value);
+                
+                if (minVal >= maxVal) {
+                    if (this === rangeMin) {
+                        rangeMax.value = minVal + 100;
+                    } else {
+                        rangeMin.value = maxVal - 100;
+                    }
+                }
+                
+                updateRangeSlider();
+                updateDashboard();
+            }
+
+            rangeMin.addEventListener('input', handleRangeUpdate);
+            rangeMax.addEventListener('input', handleRangeUpdate);
+
+            // Export buttons
+            document.getElementById('export-data').addEventListener('click', exportData);
+            document.getElementById('export-data-header').addEventListener('click', exportData);
+
+            // PDF download buttons
+            document.getElementById('download-pdf').addEventListener('click', generatePDFReport);
+            document.getElementById('download-pdf-sidebar').addEventListener('click', generatePDFReport);
+
+            // Tab functionality with animation
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+
+                    // Remove active class from all tabs and contents
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active');
+                    document.getElementById(tabId + '-tab').classList.add('active');
+                });
+            });
+
+            // Initialize range display
+            updateRangeSlider();
+        });
+
+        // Handle window resize for charts
+        window.addEventListener('resize', () => {
+            Object.values(charts).forEach(chart => {
+                if (chart && typeof chart.resize === 'function') {
+                    chart.resize();
+                }
+            });
+        });
+
+        // Add smooth scrolling for better UX
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('a[href^="#"]')) {
+                e.preventDefault();
+                const target = document.querySelector(e.target.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        });
+
+        // Add keyboard navigation support
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                document.body.classList.add('keyboard-navigation');
+            }
+        });
+
+        document.addEventListener('mousedown', function() {
+            document.body.classList.remove('keyboard-navigation');
+        });
+    </script>
+</body>
+</html>
