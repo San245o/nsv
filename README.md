@@ -57,7 +57,7 @@ Convert your video into structured `.csv` metadata using OCR and GPS overlays.
 
 📍 **Ensure your `.mp4` video is in the same directory as `format.py`.**
 
-```bash
+
 python format.py
 🚀 Step 2: Run the FastAPI Server
 Install Python dependencies:
