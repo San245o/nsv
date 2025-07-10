@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comprehensive Lane Dashboard</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
+    <style>
+        /* --- Sidebar Styles --- */
+        .sidebar {
+            height: 100%;
+            width: 0; /* Start hidden */
+            position: fixed;
+            z-index: 1001; /* Above other content */
+            top: 0;
+            left: 0;
+            background-color: #222;
+            overflow-x: hidden;
+            transition: 0.4s;
+            padding-top: 60px;
+        }
+        .sidebar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 20px;
+            color: #b1b1b1;
+            display: block;
+            transition: 0.3s;
+        }
+        .sidebar a:hover {
+            color: #f1f1f1;
+        }
+        .sidebar .close-btn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+            margin-left: 50px;
+        }
+        .open-btn {
+            font-size: 24px;
+            cursor: pointer;
+            background-color: #111;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            border-radius: 5px;
+        }
+        .open-btn:hover {
+            background-color: #444;
+        }
+        #main-content {
+            transition: margin-left .4s;
+            padding: 20px;
+        }
+
+        body {
+            background: #1e1e1e;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            /* padding: 20px; <-- Moved to #main-content */
+        }
+        h2 {
+            border-bottom: 2px solid #444;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        /* --- 3D Plot Styles --- */
+        #controls-3d {
+            margin: 10px 0;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        #controls-3d select {
+             padding: 8px;
+             border-radius: 4px;
+             border: 1px solid #555;
+             background-color: #333;
+             color: #fff;
+        }
+        #3d-chart-container {
+            width: 100%;
+            height: 75vh; /* Adjusted height for better viewing */
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* --- Tabulator Styles --- */
+        .tabulator-row {
+            height: 40px;
+            border-bottom: none;
+            color: white;
+        }
+        .tabulator-row:nth-child(odd) {
+            background-color: #2c2c2c;
+        }
+        .tabulator-row:nth-child(even) {
+            background-color: #1e1e1e;
+        }
+        .sparkline {
+            display: block;
+            width: 200px;
+            height: 30px;
+        }
+        .sparkline path {
+            stroke: #4af;
+            fill: none;
+            stroke-width: 1.5;
+        }
+        
+        /* --- Prediction & Correlation Plot Styles --- */
+        .prediction-container, .correlation-container {
+            width: 100%;
+            margin-top: 20px;
+        }
+        .controls {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        label {
+            font-weight: bold;
+        }
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background-color: #333;
+            color: #fff;
+        }
+        #chart, #correlation-chart, #infra-chart {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .info-text {
+            font-style: italic;
+            color: #ccc;
+            font-size: 0.9em;
+            align-self: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar" class="sidebar">
+    <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
+    <a href="index.html">🗺️ Map View</a>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="#">📄 Report</a>
+</div>
+
+<div id="main-content">
+<button class="open-btn" onclick="openNav()">&#9776;</button>
+
+<h2>3D Visualization of Lane Metrics</h2>
+<div id="controls-3d">
+    <label for="metricSelect3d">Select Metric:</label>
+    <select id="metricSelect3d">
+        <option value="roughness">Roughness</option>
+        <option value="rutting">Rutting</option>
+        <option value="cracking">Cracking</option>
+        <option value="ravelling">Ravelling</option>
+    </select>
+    <label for="viewSelect3d">Visualization Type:</label>
+    <select id="viewSelect3d">
+        <option value="scatter">Scatter 3D</option>
+        <option value="ribbon">Ribbon Surface</option>
+    </select>
+    <label for="themeToggle3d">Theme:</label>
+    <select id="themeToggle3d">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+    </select>
+</div>
+<div id="3d-chart-container"></div>
+
+
+<h2 id="section2">Lane Dashboard - Sparklines</h2>
+<div id="table"></div>
+
+<h2 id="section3">Lane Dashboard - Summary Statistics</h2>
+<div id="summary-table"></div>
+
+
+<h2 id="section4">Lane Deterioration Prediction</h2>
+<div class="prediction-container">
+    <div class="controls">
+        <label for="lane-select">Select Lane:</label>
+        <select id="lane-select"></select>
+        <label for="metric-select">Select Metric:</label>
+        <select id="metric-select"></select>
+    </div>
+    <div id="chart"></div>
+</div>
+
+<h2 id="section5">Metric vs. Infrastructure Analysis</h2>
+<div class="correlation-container">
+     <div class="controls">
+        <label for="metric-infra-select">Select Metric:</label>
+        <select id="metric-infra-select"></select>
+        
+    </div>
+    <div id="infra-chart"></div>
+</div>
+</div>
+
+<script src="segments.js"></script>
+<script>
+// --- Sidebar Navigation Logic ---
+function openNav() {
+    document.getElementById("sidebar").style.width = "250px";
+    document.getElementById("main-content").style.marginLeft = "250px";
+}
+
+function closeNav() {
+    document.getElementById("sidebar").style.width = "0";
+    document.getElementById("main-content").style.marginLeft= "0";
+}
+
+// --- PART 1: TABULATOR LOGIC ---
+
+const thresholds = {
+    roughness: 2000,
+    rutting: 5,
+    cracking: 5,
+    ravelling: 1,
+};
+const grouped = segments.reduce((acc, seg) => {
+    const lane = seg.lane;
+    if (!acc[lane]) acc[lane] = {lane, roughness: [], rutting: [], cracking: [], ravelling: []};
+    acc[lane].roughness.push(seg.roughness ?? 0);
+    acc[lane].rutting.push(seg.rutting ?? 0);
+    acc[lane].cracking.push(seg.cracking ?? 0);
+    acc[lane].ravelling.push(seg.ravelling ?? 0);
+    return acc;
+}, {});
+const tableData = Object.values(grouped);
+function sparklineSVG(values) {
+    if (!values || values.length === 0) return "";
+    const w = 200, h = 20;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const scaleX = values.length > 1 ? w / (values.length - 1) : 0;
+    const scaleY = max === min ? 0 : h / (max - min);
+    let path = "";
+    values.forEach((v, i) => {
+        const x = i * scaleX;
+        const y = h - ((v - min) * scaleY);
+        path += (i === 0 ? "M" : "L") + x.toFixed(2) + "," + y.toFixed(2);
+    });
+    return `<svg class="sparkline" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${path}"/></svg>`;
+}
+new Tabulator("#table", {
+    data: tableData,
+    layout: "fitColumns",
+    columns: [
+        {title:"Lane", field:"lane", width:80},
+        {title:"Roughness", field:"roughness", formatter:cell=>sparklineSVG(cell.getValue())},
+        {title:"Rutting", field:"rutting", formatter:cell=>sparklineSVG(cell.getValue())},
+        {title:"Cracking", field:"cracking", formatter:cell=>sparklineSVG(cell.getValue())},
+        {title:"Ravelling", field:"ravelling", formatter:cell=>sparklineSVG(cell.getValue())}
+    ]
+});
+const summaryData = Object.values(grouped).map(d => {
+    const count = d.roughness.length;
+    const mean = arr => arr.reduce((s,v)=>s+v,0)/arr.length;
+    const stddev = arr => {
+        const avg = mean(arr);
+        return Math.sqrt(arr.reduce((s,v)=>s+(v-avg)**2,0)/arr.length);
+    };
+    const pctAbove = (arr, limit) => (arr.filter(v=>v>limit).length / arr.length * 100).toFixed(1);
+    const avgRough = mean(d.roughness).toFixed(1);
+    const maxRutt = Math.max(...d.rutting).toFixed(1);
+    const crackingPct = pctAbove(d.cracking, thresholds.cracking);
+    const ravellingPct = pctAbove(d.ravelling, thresholds.ravelling);
+    const roughStd = stddev(d.roughness).toFixed(1);
+    const maxroughness = Math.max(...d.roughness).toFixed(1);
+    return {
+        lane: d.lane,
+        avgRoughness: avgRough,
+        roughStdDev: roughStd,
+        maxRutting: maxRutt,
+        pctCracking: crackingPct,
+        pctRavelling: ravellingPct,
+        segments: count,
+        maxRoughness : maxroughness,
+    };
+});
+new Tabulator("#summary-table", {
+    data: summaryData,
+    layout: "fitColumns",
+    columns: [
+        {title:"Lane", field:"lane", width:70},
+        {title:"Avg Roughness", field:"avgRoughness"},
+        {title:"Roughness StdDev", field:"roughStdDev"},
+        {title:"Max Roughness",field:"maxRoughness"},
+        {title:"Max Rutting", field:"maxRutting"},
+        {title:"% Cracking > Limit", field:"pctCracking", formatter:cell => cell.getValue() + "%"},
+        {title:"% Ravelling > Limit", field:"pctRavelling", formatter:cell => cell.getValue() + "%"},
+        {title:"Segments", field:"segments"},
+    ]
+});
+
+
+// --- PART 2: PLOTLY SLIDER LOGIC ---
+const PREDICTION_YEARS = 5;
+const ANNUAL_DETERIORATION_RATE = 0.05;
+const HIGHLIGHT_COLOR = '#00bfff';
+const FAINT_COLOR = '#4682B4';
+const METRICS = {
+    roughness: { name: 'Roughness', unit: 'mm/km' },
+    rutting: { name: 'Rut Depth', unit: 'mm' },
+    cracking: { name: 'Cracking', unit: '%' },
+    ravelling: { name: 'Ravelling', unit: '%' }
+};
+
+function initializeSlider() {
+    const laneSelect = document.getElementById('lane-select');
+    const metricSelect = document.getElementById('metric-select');
+    const chartDiv = document.getElementById('chart');
+
+    function createDeteriorationChart(laneId, metricId) {
+        const laneData = segments.filter(s => s.lane === laneId);
+        if (laneData.length === 0) {
+            chartDiv.innerHTML = `<p>No data available for lane ${laneId}.</p>`;
+            return;
+        }
+        const chainage = laneData.map(s => (s.start_chainage + s.end_chainage) / 2);
+        const initialValues = laneData.map(s => s[metricId] ?? 0);
+        const traces = [];
+        let maxValue = 0;
+        for (let year = 0; year <= PREDICTION_YEARS; year++) {
+            const predictedValues = initialValues.map(val => val * (1 + ANNUAL_DETERIORATION_RATE * year));
+            const currentMax = Math.max(...predictedValues);
+            if (currentMax > maxValue) maxValue = currentMax;
+            traces.push({
+                x: chainage, y: predictedValues, mode: 'lines', name: `Year ${year}`,
+                visible: (year === 0), line: { color: HIGHLIGHT_COLOR, width: 4 }
+            });
+        }
+        const sliderSteps = [];
+        for (let i = 0; i <= PREDICTION_YEARS; i++) {
+            const visibility = Array(PREDICTION_YEARS + 1).fill(false);
+            const widths = Array(PREDICTION_YEARS + 1).fill(1.5);
+            const colors = Array(PREDICTION_YEARS + 1).fill(FAINT_COLOR);
+            for (let j = 0; j <= i; j++) { visibility[j] = true; }
+            widths[i] = 4;
+            colors[i] = HIGHLIGHT_COLOR;
+            sliderSteps.push({
+                method: 'restyle', label: `Year ${i}`,
+                args: [{ 'visible': visibility, 'line.width': widths, 'line.color': colors }]
+            });
+        }
+        const selectedMetricInfo = METRICS[metricId];
+        const layout = {
+            title: `Predicted ${selectedMetricInfo.name} for ${laneId}`,
+            xaxis: { title: 'Chainage (m)', gridcolor: '#444' },
+            yaxis: { title: `${selectedMetricInfo.name} (${selectedMetricInfo.unit})`, gridcolor: '#444', range: [0, maxValue * 1.1]},
+            paper_bgcolor: '#1e1e1e', plot_bgcolor: '#2a2a2a', font: { color: '#e0e0e0' },
+            showlegend: false,
+            sliders: [{
+                active: 0, steps: sliderSteps, pad: { t: 50, b: 10 },
+                currentvalue: { prefix: 'Showing up to Year: ', visible: true, xanchor: 'right' }
+            }]
+        };
+        Plotly.newPlot(chartDiv, traces, layout);
+    }
+
+    const allLanes = [...new Set(segments.map(s => s.lane))].sort();
+    allLanes.forEach(lane => {
+        const option = document.createElement('option');
+        option.value = lane; option.textContent = lane;
+        laneSelect.appendChild(option);
+    });
+    for (const metricId in METRICS) {
+        const option = document.createElement('option');
+        option.value = metricId; option.textContent = METRICS[metricId].name;
+        metricSelect.appendChild(option);
+    }
+    function redrawChart() {
+        const selectedLane = laneSelect.value;
+        const selectedMetric = metricSelect.value;
+        createDeteriorationChart(selectedLane, selectedMetric);
+    }
+    laneSelect.addEventListener('change', redrawChart);
+    metricSelect.addEventListener('change', redrawChart);
+    if (allLanes.length > 0) { redrawChart(); }
+}
+initializeSlider();
+
+
+// --- PART 3: METRIC VS. INFRASTRUCTURE BOX PLOT ---
+function initializeInfrastructurePlot() {
+    const metricSelect = document.getElementById('metric-infra-select');
+    const chartDiv = document.getElementById('infra-chart');
+
+    /**
+     * Creates a box plot comparing a metric across different structure types.
+     * @param {string} metricId - The key for the metric to be plotted.
+     */
+    function createStructureBoxPlot(metricId) {
+        // Filter for segments that have a structure defined (and isn't just 'normal road')
+        const filteredSegments = segments.filter(s => s.structure && s.structure.toLowerCase() !== 'normal road');
+        
+        // Prepare data for the box plot
+        const metricValues = filteredSegments.map(s => s[metricId] ?? 0);
+        const structureTypes = filteredSegments.map(s => s.structure);
+
+        const trace = {
+            y: metricValues,
+            x: structureTypes,
+            type: 'box',
+            boxpoints: 'all', // Show all underlying data points
+            jitter: 0.4,      // Spread out the points for better visibility
+            pointpos: -1.8,
+            marker: { color: HIGHLIGHT_COLOR, opacity: 0.7 },
+            boxmean: 'sd' // Also show the mean and standard deviation
+        };
+
+        const metricInfo = METRICS[metricId];
+        const layout = {  
+            title: `Distribution of ${metricInfo.name} by Structure Type`,
+            yaxis: { title: `${metricInfo.name} (${metricInfo.unit})`, gridcolor: '#444', zeroline: false },
+            xaxis: { title: 'Structure Type', gridcolor: '#444' },
+            paper_bgcolor: '#1e1e1e',
+            plot_bgcolor: '#2a2a2a',
+            font: { color: '#e0e0e0' },
+            showlegend: false
+        };
+
+        Plotly.newPlot(chartDiv, [trace], layout);
+    }
+
+    // Populate the metric selector dropdown
+    for (const metricId in METRICS) {
+        const option = document.createElement('option');
+        option.value = metricId;
+        option.textContent = METRICS[metricId].name;
+        metricSelect.appendChild(option);
+    }
+    metricSelect.value = 'roughness'; // Set a default value
+
+    // Redraw plot when selection changes
+    metricSelect.addEventListener('change', () => {
+        createStructureBoxPlot(metricSelect.value);
+    });
+
+    // Initial plot render
+    createStructureBoxPlot(metricSelect.value);
+}
+initializeInfrastructurePlot();
+
+// --- PART 4: 3D VISUALIZATION LOGIC (MERGED) ---
+function initialize3dPlot() {
+    const laneMap3d = {
+        "L4": 1, "L3": 2, "L2": 3, "L1": 4,
+        "R1": 5, "R2": 6, "R3": 7, "R4": 8
+    };
+    const metricSelect3d = document.getElementById("metricSelect3d");
+    const viewSelect3d = document.getElementById("viewSelect3d");
+    const themeToggle3d = document.getElementById("themeToggle3d");
+    const chartDiv3d = document.getElementById("3d-chart-container");
+
+    function prepareScatterTraces(metric) {
+        const traces = [];
+        Object.keys(laneMap3d).forEach(laneName => {
+            const laneNumber = laneMap3d[laneName];
+            const laneSegments = segments.filter(s => s.lane === laneName && s[metric] != null && !isNaN(s[metric]));
+            if (laneSegments.length === 0) return;
+            traces.push({
+                x: Array(laneSegments.length).fill(laneNumber),
+                y: laneSegments.map(s => (s.start_chainage + s.end_chainage) / 2),
+                z: laneSegments.map(s => s[metric]),
+                mode: 'lines+markers', type: 'scatter3d', name: laneName,
+                line: { width: 4 }, marker: { size: 3 },
+                hovertemplate: `<b>Lane:</b> %{x}<br><b>Chainage:</b> %{y}<br><b>${metric.charAt(0).toUpperCase() + metric.slice(1)}:</b> %{z}<extra></extra>`
+            });
+        });
+        return traces;
+    }
+
+    function prepareRibbonSurface(metric) {
+        const lanes = Object.keys(laneMap3d);
+        const x = lanes.map(l => laneMap3d[l]);
+        const ySet = new Set();
+        const dataMap = {};
+        lanes.forEach(laneName => {
+            const laneSegments = segments.filter(s => s.lane === laneName && s[metric] != null && !isNaN(s[metric]));
+            laneSegments.forEach(s => {
+                const chainMid = (s.start_chainage + s.end_chainage) / 2;
+                ySet.add(chainMid);
+                if (!dataMap[chainMid]) dataMap[chainMid] = {};
+                dataMap[chainMid][laneName] = s[metric];
+            });
+        });
+        const y = Array.from(ySet).sort((a, b) => a - b);
+        const z = y.map(chain => lanes.map(lane => dataMap[chain]?.[lane] ?? null));
+        return [{
+            type: 'surface', x, y, z, colorscale: 'Viridis',
+            cmin: Math.min(...z.flat().filter(v => v !== null)),
+            cmax: Math.max(...z.flat().filter(v => v !== null)),
+            hovertemplate: `<b>Lane:</b> %{x}<br><b>Chainage:</b> %{y}<br><b>${metric.charAt(0).toUpperCase() + metric.slice(1)}:</b> %{z}<extra></extra>`
+        }];
+    }
+
+    function getLayout3d(metric, viewType, theme) {
+        const isDark = theme === 'dark';
+        const bg = isDark ? '#1e1e1e' : '#fff';
+        const fg = isDark ? '#e0e0e0' : '#000';
+        const grid = isDark ? '#444' : '#ccc';
+        const metricTitle = metric.charAt(0).toUpperCase() + metric.slice(1);
+        return {
+            title: { text: `Lane ${metricTitle} Profile (${viewType === 'scatter' ? 'Scatter' : 'Ribbon'})`, font: { color: fg } },
+            paper_bgcolor: bg, plot_bgcolor: bg,
+            scene: {
+                xaxis: { title: 'Lane', tickvals: Object.values(laneMap3d), ticktext: Object.keys(laneMap3d), backgroundcolor: bg, gridcolor: grid, zerolinecolor: grid, color: fg },
+                yaxis: { title: 'Chainage', backgroundcolor: bg, gridcolor: grid, zerolinecolor: grid, color: fg },
+                zaxis: { title: metricTitle, backgroundcolor: bg, gridcolor: grid, zerolinecolor: grid, color: fg },
+                aspectmode: 'manual', aspectratio: { x: 1, y: 3, z: 1.2 },
+                camera: { eye: { x: 3, y: -2, z: 2.5 } }
+            },
+            legend: { font: { color: fg } }, margin: { l: 0, r: 0, b: 0, t: 40 }
+        };
+    }
+
+    function renderPlot3d() {
+        const metric = metricSelect3d.value;
+        const viewType = viewSelect3d.value;
+        const theme = themeToggle3d.value;
+        const traces = viewType === 'scatter' ? prepareScatterTraces(metric) : prepareRibbonSurface(metric);
+        const layout = getLayout3d(metric, viewType, theme);
+        Plotly.newPlot(chartDiv3d, traces, layout);
+    }
+
+    // Set defaults and initial render
+    metricSelect3d.value = 'roughness';
+    viewSelect3d.value = 'ribbon';
+    themeToggle3d.value = 'dark';
+    renderPlot3d();
+
+    // Event handlers
+    metricSelect3d.addEventListener('change', renderPlot3d);
+    viewSelect.addEventListener('change', renderPlot3d);
+    themeToggle3d.addEventListener('change', renderPlot3d);
+}
+initialize3dPlot();
+
+</script>
+
+</div>
+</body>
+</html>
