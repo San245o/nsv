@@ -21,6 +21,103 @@
             transition: 0.4s;
             padding-top: 60px;
         }
+        /* Modern Sidebar Navigation Styles */
+.sidebar-nav {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 10000;
+    top: 0;
+    left: 0;
+    background-color: #181f2a; /* fallback if var not set */
+    background-color: var(--gray-900, #181f2a);
+    overflow-x: hidden;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    padding-top: 60px;
+    border-right: 1px solid var(--gray-700, #232b3b);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+}
+
+.sidebar-nav.open {
+    width: 260px;
+}
+
+.sidebar-nav a {
+    padding: 12px 16px 12px 32px;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gray-300, #cbd5e1);
+    display: block;
+    transition: all 0.3s ease;
+    border-radius: 0 20px 20px 0;
+}
+
+.sidebar-nav a:hover {
+    color: #fff;
+    background-color: rgba(59, 130, 246, 0.12);
+    transform: translateX(5px);
+}
+
+.sidebar-nav .close-btn {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    font-size: 36px;
+    background: none;
+    border: none;
+    color: var(--gray-400, #94a3b8);
+    cursor: pointer;
+    transition: color 0.3s, transform 0.3s;
+}
+.sidebar-nav .close-btn:hover {
+    color: #fff;
+    transform: rotate(90deg);
+}
+
+.open-btn {
+    font-size: 24px;
+    cursor: pointer;
+    background: rgba(30, 41, 59, 0.8);
+    color: #fff;
+    padding: 8px 12px;
+    border: 1px solid var(--gray-600, #334155);
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 9998;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.open-btn:hover {
+    background-color: #2563eb;
+    background-color: var(--primary-600, #2563eb);
+    transform: scale(1.1);
+}
+
+/* Optional: Shift main content when sidebar is open */
+#main-report-content {
+    transition: margin-left .4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-nav.open ~ #main-report-content {
+    margin-left: 260px;
+}
+
+/* Responsive: Full width on mobile */
+@media (max-width: 600px) {
+    .sidebar-nav.open {
+        width: 100vw;
+    }
+    .sidebar-nav {
+        border-radius: 0;
+    }
+    .sidebar-nav a {
+        font-size: 1rem;
+        padding: 14px 18px 14px 28px;
+    }
+}
         .sidebar a {
             padding: 10px 15px;
             text-decoration: none;
@@ -183,79 +280,76 @@
 </head>
 <body>
 
-<div id="sidebar" class="sidebar">
+<!-- Sidebar Navigation -->
+<div id="sidebar-nav" class="sidebar-nav">
     <button class="close-btn" onclick="closeNav()" aria-label="Close Sidebar">&times;</button>
     <a href="index.html">🗺️ Map View</a>
     <a href="dashboard.html">📊 Dashboard</a>
-    <a href = "report.html">📜 Report</a>
-    
+    <a href="report.html">📄 Report</a>
 </div>
+<!-- Hamburger/Open Button -->
+<button class="open-btn" onclick="openNav()" aria-label="Open Sidebar">&#9776;</button>
 
 <div id="main-content">
-<button class="open-btn" onclick="openNav()">&#9776;</button>
-
-<h2>3D Visualization of Lane Metrics</h2>
-<div id="controls-3d">
-    <label for="metricSelect3d">Select Metric:</label>
-    <select id="metricSelect3d">
-        <option value="roughness">Roughness</option>
-        <option value="rutting">Rutting</option>
-        <option value="cracking">Cracking</option>
-        <option value="ravelling">Ravelling</option>
-    </select>
-    <label for="viewSelect3d">Visualization Type:</label>
-    <select id="viewSelect3d">
-        <option value="scatter">Scatter 3D</option>
-        <option value="ribbon">Ribbon Surface</option>
-    </select>
-</div>
-<div id="3d-chart-container"></div>
-
-<h2 id="section2">Lane Dashboard - Sparklines</h2>
-<div id="table"></div>
-
-<h2 id="section3">Lane Dashboard - Summary Statistics</h2>
-<div id="summary-table"></div>
-
-<!-- ADD THIS MISSING SECTION -->
-<h2 id="section-prediction">Deterioration Prediction</h2>
-<div class="prediction-container">
-    <div class="controls">
-        <label for="lane-select">Select Lane:</label>
-        <select id="lane-select"></select>
-        <label for="metric-select">Select Metric:</label>
-        <select id="metric-select"></select>
-    </div>
-    <div id="chart"></div>
-</div>
-<!-- END OF MISSING SECTION -->
-
-<h2 id="section4">Lane Infographics</h2>
-<div class="infographic-container" id="infographic-container"></div>
-
-<h2 id="section5">Metric vs. Infrastructure Analysis</h2>
-<div class="correlation-container">
-     <div class="controls">
-        <label for="metric-infra-select">Select Metric:</label>
-        <select id="metric-infra-select">
+    <h2 style = "text-align: center;">3D Visualization of Lane Metrics</h2>
+    <div id="controls-3d">
+        <label for="metricSelect3d">Select Metric:</label>
+        <select id="metricSelect3d">
+            <option value="roughness">Roughness</option>
+            <option value="rutting">Rutting</option>
+            <option value="cracking">Cracking</option>
+            <option value="ravelling">Ravelling</option>
+        </select>
+        <label for="viewSelect3d">Visualization Type:</label>
+        <select id="viewSelect3d">
+            <option value="scatter">Scatter 3D</option>
+            <option value="ribbon">Ribbon Surface</option>
         </select>
     </div>
-    <div id="infra-chart"></div>
-</div>
+    <div id="3d-chart-container"></div>
+
+    <h2 id="section2" style = "text-align: center;">Lane Dashboard - Sparklines</h2>
+    <div id="table"></div>
+
+    <h2 id="section3" style = "text-align: center;">Lane Dashboard - Summary Statistics</h2>
+    <div id="summary-table"></div>
+
+    <!-- ADD THIS MISSING SECTION -->
+    <h2 id="section-prediction" style = "text-align: center;" >Deterioration Prediction</h2>
+    <div class="prediction-container">
+        <div class="controls">
+            <label for="lane-select">Select Lane:</label>
+            <select id="lane-select"></select>
+            <label for="metric-select">Select Metric:</label>
+            <select id="metric-select"></select>
+        </div>
+        <div id="chart"></div>
+    </div>
+    <!-- END OF MISSING SECTION -->
+
+    <h2 id="section4" style = "text-align: center;" >Lane Infographics</h2>
+    <div class="infographic-container" id="infographic-container"></div>
+
+    <h2 id="section5" style = "text-align: center;" >Metric vs. Infrastructure Analysis</h2>
+    <div class="correlation-container">
+         <div class="controls">
+            <label for="metric-infra-select">Select Metric:</label>
+            <select id="metric-infra-select">
+            </select>
+        </div>
+        <div id="infra-chart"></div>
+    </div>
 </div>
 
 <script src="segments.js"></script>
 <script>
 // --- Sidebar Navigation Logic ---
 function openNav() {
-    document.getElementById("sidebar").style.width = "250px";
-    document.getElementById("main-content").style.marginLeft = "250px";
+    document.getElementById("sidebar-nav").classList.add("open");
 }
 function closeNav() {
-    document.getElementById("sidebar").style.width = "0";
-    document.getElementById("main-content").style.marginLeft= "0";
+    document.getElementById("sidebar-nav").classList.remove("open");
 }
-
 // --- PART 1: TABULATOR LOGIC ---
 
 const thresholds = {
