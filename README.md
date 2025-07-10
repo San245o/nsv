@@ -153,3 +153,48 @@ Real-time alert system on map dashboards
 NLP summarization of OCR content (e.g., “speed limit”, “diversion ahead”)
 
 API integrations with NHAI or state transport dashboards
+# 🌐 Frontend
+
+> 📊 Lightweight Web Dashboard for Smart Highway Monitoring  
+> 🏁 Submission for NHAI Hackathon 2025 — Frontend Module  
+> 🔗 Interfaces with [FastTrimmer Backend](../FastTrimmer)
+
+---
+
+## 🧠 Overview
+
+The **FastTrimmer Frontend** is a lightweight, responsive dashboard built using **pure HTML, CSS, and JavaScript**. It provides an intuitive UI for viewing geo-tagged video insights extracted by the backend, with features like:
+
+- **Interactive map view** of GPS coordinates
+- **Video player** to preview trimmed clips
+- **Filterable tables** of timestamps and metadata
+- **PDF report generation**
+- **Mobile-friendly navigation and design**
+
+---
+
+## 🚀 Key Features
+
+✅ No frameworks — built with **HTML, CSS, JS** only  
+✅ Responsive layout using **Flexbox** and **Media Queries**  
+✅ Leaflet.js-based **interactive map view**  
+✅ Upload & view **original vs trimmed video**  
+✅ **Sort/filter** timestamped metadata (CSV-based)  
+✅ Generate **PDF reports** using `html2canvas` + `jsPDF`  
+✅ Connects directly to backend **FastAPI endpoints**
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer         | Tech Used         |
+|---------------|-------------------|
+| UI/Frontend   | HTML, CSS, JavaScript  
+| Mapping       | Leaflet.js  
+| Charts (optional) | Chart.js (optional)  
+| Video         | HTML5 `<video>` tag  
+| PDF Export    | jsPDF + html2canvas  
+| API Interface | Fetch API (AJAX)
+
+---
+
