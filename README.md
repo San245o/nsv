@@ -153,48 +153,39 @@ Real-time alert system on map dashboards
 NLP summarization of OCR content (e.g., “speed limit”, “diversion ahead”)
 
 API integrations with NHAI or state transport dashboards
-# 🌐 Frontend
+# 🌐 Frontend - Lightweight Web Dashboard for Smart Highway Monitoring
 
-> 📊 Lightweight Web Dashboard for Smart Highway Monitoring  
-> 🏁 Submission for NHAI Hackathon 2025 — Frontend Module  
-> 🔗 Interfaces with [FastTrimmer Backend](../FastTrimmer)
-
----
-
-## 🧠 Overview
-
-The **FastTrimmer Frontend** is a lightweight, responsive dashboard built using **pure HTML, CSS, and JavaScript**. It provides an intuitive UI for viewing geo-tagged video insights extracted by the backend, with features like:
-
-- **Interactive map view** of GPS coordinates
-- **Video player** to preview trimmed clips
-- **Filterable tables** of timestamps and metadata
-- **PDF report generation**
-- **Mobile-friendly navigation and design**
+**🏁 Submission for NHAI Hackathon 2025 — Frontend Module**  
+**🔗 Interfaces with FastTrimmer Backend**
 
 ---
 
-## 🚀 Key Features
+### 🧠 Overview
 
-✅ No frameworks — built with **HTML, CSS, JS** only  
-✅ Responsive layout using **Flexbox** and **Media Queries**  
-✅ Leaflet.js-based **interactive map view**  
-✅ Upload & view **original vs trimmed video**  
-✅ **Sort/filter** timestamped metadata (CSV-based)  
-✅ Generate **PDF reports** using `html2canvas` + `jsPDF`  
-✅ Connects directly to backend **FastAPI endpoints**
+The FastTrimmer Frontend is a lightweight, responsive dashboard built using pure HTML, CSS, and JavaScript. It provides an intuitive UI for viewing geo-tagged video insights extracted by the backend.
 
----
+-   **`index.html`**: The main entry point featuring an interactive Leaflet.js map to visualize road segments, play geo-tagged videos, and view detailed segment data.
+-   **`dashboard.html`**: A comprehensive analytics hub with interactive charts and tables to visualize road health, predict deterioration, and analyze infrastructure correlations.
+-   **`report.html`**: A dynamic reporting page that generates filterable summaries, KPIs, and charts for creating detailed PDF reports.
 
-## 🛠️ Tech Stack
+### 🚀 Key Features
 
-| Layer         | Tech Used         |
-|---------------|-------------------|
-| UI/Frontend   | HTML, CSS, JavaScript  
-| Mapping       | Leaflet.js  
-| Charts (optional) | Chart.js (optional)  
-| Video         | HTML5 `<video>` tag  
-| PDF Export    | jsPDF + html2canvas  
-| API Interface | Fetch API (AJAX)
+✅ **No frameworks** — built with HTML, CSS, & JS only for maximum speed and compatibility.  
+✅ **Responsive Layout** using Flexbox and Media Queries for a seamless experience on desktop and mobile.  
+✅ **Interactive Mapping** via Leaflet.js to visualize road segments and infrastructure.  
+✅ **Integrated Video Playback** to view survey videos directly on the map.  
+✅ **Advanced Analytics** with Plotly.js and Tabulator.js for 3D visualizations, statistical tables, and predictive modeling.  
+✅ **Dynamic PDF Reporting** using jsPDF and html2canvas to export insights.  
+✅ **Direct API Integration** with the backend using the native Fetch API.
 
----
+### 🛠️ Tech Stack
 
+| Layer         | Tech Used                               |
+|---------------|-----------------------------------------|
+| **UI/Frontend** | HTML, CSS, JavaScript (ES6+)            |
+| **Mapping**     | Leaflet.js                              |
+| **Charts**      | Plotly.js                               |
+| **Tables**      | Tabulator.js                            |
+| **Video**       | HTML5 `<video>` tag, Video.js           |
+| **PDF Export**  | jsPDF + html2canvas                     |
+| **API Interface**| Fetch API (AJAX)   
