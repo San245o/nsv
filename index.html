@@ -307,17 +307,7 @@ function closeNav() {
               segmentLayer = L.polyline([segment.start, segment.end], { color: color, weight: 4 });
           }
 
-          const popupContent = `<div class="video-container" style="margin-top:10px; color:white; font-weight:bold; font-size:1.5em;">
-    Loading video...
-</div>
-
-<style>
-    @keyframes pulse {
-        0% { opacity: 0.8; }
-        50% { opacity: 1; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
-        100% { opacity: 0.8; }
-    }
-</style>`;
+          const popupContent = `<div class="video-container" style="margin-top:10px;">Loading video...</div>`;
           segmentLayer.bindPopup(popupContent, { minWidth: 340, className: 'video-popup' });
           segmentLayer.on('popupopen', (e) => getVideoForSegment(e.popup, segment));
           
