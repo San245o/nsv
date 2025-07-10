@@ -1,4 +1,5 @@
 # NSV Dashboard - NHAI national hackathon
+# Deployed Link : https://san245o.github.io/nsv/
 # 🛠️ FastTrimmer (Backend)
 
 > 🚀 Smart Video Trimming & Geo-Temporal Analytics Engine for Highway Monitoring  
