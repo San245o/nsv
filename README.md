@@ -62,15 +62,9 @@ python format.py
 🚀 Step 2: Run the FastAPI Server
 Install Python dependencies:
 
-bash
-Copy
-Edit
 pip install -r requirements.txt
 Start the server locally:
 
-bash
-Copy
-Edit
 uvicorn app:app --host 0.0.0.0 --port 8000
 Your API is now live at:
 👉 http://localhost:8000
@@ -80,15 +74,9 @@ Use Cloudflare to expose your local FastAPI server:
 
 Install Cloudflared:
 
-bash
-Copy
-Edit
 npm install -g cloudflared
 Tunnel your API:
 
-bash
-Copy
-Edit
 cloudflared tunnel --url http://localhost:8000
 🌍 You’ll get a public HTTPS link like:
 https://fasttrimmer-nhai.trycloudflare.com
@@ -96,24 +84,16 @@ https://fasttrimmer-nhai.trycloudflare.com
 🐳 Optional: Docker Support
 Build the Docker image:
 
-bash
-Copy
-Edit
 docker build -t fasttrimmer .
 Run the container:
 
-bash
-Copy
-Edit
 docker run -p 8000:8000 fasttrimmer
 🧪 API Usage
 POST /trim
 Returns a trimmed .mp4 video clip based on given coordinates.
 
 ✅ Request Format:
-json
-Copy
-Edit
+
 {
   "start_lat": 28.6129,
   "start_lon": 77.2295,
@@ -121,9 +101,7 @@ Edit
   "end_lon": 77.2340
 }
 🔁 Response:
-json
-Copy
-Edit
+
 {
   "video_url": "https://yourserver.com/output_trimmed.mp4",
 }
@@ -150,9 +128,9 @@ Deployment	Docker, Uvicorn
 Data Format	CSV
 
 🗃️ Sample CSV Output
-Timestamp	Latitude	Longitude	
-2025-07-10 08:45	28.6130	77.2300
-2025-07-10 08:46	28.6136	77.2306	
+Timestamp	          Latitude	Longitude	
+2025-07-10 08:45	   28.6130	77.2300
+2025-07-10 08:46	   28.6136	77.2306	
 
 🔭 Future Scope
 AI detection of road distress (potholes, lane fading, debris)
