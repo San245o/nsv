@@ -66,50 +66,6 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* NAVIGATION SIDEBAR */
-        .sidebar-nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            height: 100%;
-            background: rgba(30, 41, 59, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 60px 20px 20px;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
-            z-index: 10000;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar-nav.open {
-            transform: translateX(0);
-        }
-
-        .sidebar-nav .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .sidebar-nav a {
-            display: block;
-            color: #ffffff;
-            text-decoration: none;
-            padding: 12px 0;
-            font-size: 1rem;
-            transition: color 0.3s ease;
-        }
-
-        .sidebar-nav a:hover {
-            color: var(--primary-500);
-        }
-
         /* Enhanced Loading Animation */
         .loading {
             position: fixed;
@@ -322,77 +278,7 @@
             width: 16px;
             height: 16px;
         }
-        .sidebar-nav {
-            height: 100%;
-            width: 100;
-            position: fixed;
-            z-index: 10000;
-            top: 0;
-            left: 0;
-            background-color: var(--gray-900);
-            overflow-x: hidden;
-            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            padding-top: 60px;
-            border-right: 1px solid var(--gray-700);
-            box-shadow: var(--shadow-xl);
-        }
 
-        .sidebar-nav a {
-            padding: 12px 16px 12px 32px;
-            text-decoration: none;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--gray-300);
-            display: block;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar-nav a:hover {
-            color: white;
-            background-color: rgba(59, 130, 246, 0.1);
-            transform: translateX(5px);
-        }
-
-        .sidebar-nav .close-btn {
-            position: absolute;
-            top: 15px;
-            right: 25px;
-            font-size: 36px;
-            background: none;
-            border: none;
-            color: var(--gray-400);
-            cursor: pointer;
-            transition: color 0.3s, transform 0.3s;
-        }
-        .sidebar-nav .close-btn:hover {
-            color: white;
-            transform: rotate(90deg);
-        }
-
-        .open-btn {
-            font-size: 24px;
-            cursor: pointer;
-            background: rgba(30, 41, 59, 0.8);
-            color: white;
-            padding: 8px 12px;
-            border: 1px solid var(--gray-600);
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 9998;
-            border-radius: var(--border-radius-md);
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .open-btn:hover {
-            background-color: var(--primary-600);
-            transform: scale(1.1);
-        }
-
-        #main-report-content {
-            transition: margin-left .4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
         /* Enhanced KPI Section */
         .kpi-section {
             margin-bottom: clamp(20px, 3vw, 32px);
@@ -1364,24 +1250,13 @@
     </style>
 </head>
 <body>
-    <!-- NAVIGATION SIDEBAR -->
-    <div id="sidebar-nav" class="sidebar-nav">
-        <button class="close-btn" onclick="closeNav()">&times;</button>
-        <a href="index.html">🗺️ Map View</a>
-        <a href="dashboard.html">📊 Dashboard</a>
-        <a href="report.html">📄 Report</a>
-    </div>
-
     <!-- Enhanced Loading Screen -->
     <div class="loading" id="loading">
         <div class="spinner"></div>
         <div class="loading-text">Loading Highway Intelligence Dashboard...</div>
     </div>
 
-    <div class="dashboard-container" id="main-report-content">
-        <!-- OPEN NAVIGATION BUTTON -->
-        <button class="open-btn" onclick="openNav()">&#9776;</button>
-
+    <div class="dashboard-container">
         <!-- Enhanced Header -->
         <header class="header">
             <div class="header-content">
@@ -1783,13 +1658,7 @@
 
     <script>
         // Global variables
-    function openNav() {
-    document.getElementById("sidebar-nav").classList.add("open");
-    }
-    function closeNav() {
-    document.getElementById("sidebar-nav").classList.remove("open");
-    }
-            let segments = [];
+        let segments = [];
         let processedData = [];
         let filteredData = [];
         const charts = {};
@@ -2142,59 +2011,53 @@
 
         function createPieCharts() {
             // Roughness distribution
+            const roughnessDistribution = processedData.reduce((acc, segment) => {
+                acc[segment.roughness_condition] = (acc[segment.roughness_condition] || 0) + 1;
+                return acc;
+            }, {});
 
-            const ctxRoughness = document.getElementById('roughness-pie').getContext('2d');
-            const ctxRutting = document.getElementById('rutting-pie').getContext('2d');
+            const ruttingDistribution = processedData.reduce((acc, segment) => {
+                acc[segment.rutting_condition] = (acc[segment.rutting_condition] || 0) + 1;
+                return acc;
+            }, {});
+
+            createPieChart('roughness-pie', roughnessDistribution, 'Roughness');
+            createPieChart('rutting-pie', ruttingDistribution, 'Rutting');
+        }
+
+        function createPieChart(canvasId, distribution, title) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
             
-            if (charts.roughnessPie) {
-                charts.roughnessPie.destroy();
-            }
-            if (charts.ruttingPie) {
-                charts.ruttingPie.destroy();
+            if (charts[canvasId]) {
+                charts[canvasId].destroy();
             }
 
-            const roughnessData = filteredData.reduce((acc, segment) => {
-                const condition = segment.roughness_condition;
-                acc[condition] = (acc[condition] || 0) + segment.length;
-                return acc;
-            }, {});
+            const labels = Object.keys(distribution);
+            const data = Object.values(distribution);
+            const colors = labels.map(label => getConditionColor(label));
 
-            const ruttingData = filteredData.reduce((acc, segment) => {
-                const condition = segment.rutting_condition;
-                acc[condition] = (acc[condition] || 0) + segment.length;
-                return acc;
-            }, {});
-
-            charts.roughnessPie = new Chart(ctxRoughness, {
-                type: 'pie',
+            charts[canvasId] = new Chart(ctx, {
+                type: 'doughnut',
                 data: {
-                    labels: Object.keys(roughnessData),
+                    labels: labels,
                     datasets: [{
-                        data: Object.values(roughnessData),
-                        backgroundColor: [
-                            '#059669',
-                            '#10b981',
-                            '#f59e0b',
-                            '#ef4444',
-                            '#8b5cf6'
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        hoverOffset: 10
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: {
+                        animateRotate: true,
+                        duration: 2000,
+                        easing: 'easeOutCubic'
+                    },
                     plugins: {
                         legend: {
-                            position: 'top',
-                            labels: {
-                                color: '#ffffff',
-                                font: {
-                                    size: 14,
-                                    weight: '600'
-                                }
-                            }
+                            display: false
                         },
                         tooltip: {
                             backgroundColor: 'rgba(15, 23, 42, 0.95)',
@@ -2204,50 +2067,8 @@
                             borderWidth: 1,
                             cornerRadius: 8
                         }
-                    }
-                }
-            });
-
-            charts.ruttingPie = new Chart(ctxRutting, {
-                type: 'pie',
-                data: {
-                    labels: Object.keys(ruttingData),
-                    datasets: [{
-                        data: Object.values(ruttingData),
-                        backgroundColor: [
-                            '#059669',
-                            '#10b981',
-                            '#f59e0b',
-                            '#ef4444',
-                            '#8b5cf6'
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                color: '#ffffff',
-                                font: {
-                                    size: 14,
-                                    weight: '600'
-                                }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                            titleColor: '#ffffff',
-                            bodyColor: '#cbd5e1',
-                            borderColor: '#475569',
-                            borderWidth: 1,
-                            cornerRadius: 8
-                        }
-                    }
+                    },
+                    cutout: '60%'
                 }
             });
         }
