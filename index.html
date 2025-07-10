@@ -10,14 +10,16 @@
  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel = "stylesheet" href = "styles.css">
+
+
 </head>
 <body>
 
 <div id="sidebar" class="sidebar">
-    <a href="javascript:void(0)" class="close-btn" onclick="closeNav()">&times;</a>
+    <button class="close-btn" onclick="closeNav()" aria-label="Close Sidebar">&times;</button>
     <a href="index.html">🗺️ Map View</a>
     <a href="dashboard.html">📊 Dashboard</a>
-    <a href="#">📄 Report</a>
+    <a href="report.html">📄 Report</a>
 </div>
 
 <div id="main-content">
@@ -722,7 +724,15 @@
  annotationEl.classList.toggle('fullscreen-active', player.isFullscreen());
  });
 
- popup.on('remove', () => { if (player) player.dispose(); });
+ popup.on('remove', () => {
+    try {
+        if (player && player.el() && player.dispose) {
+            player.dispose();
+        }
+    } catch (e) {
+        // Ignore errors on dispose
+    }
+ });
 
  } else {
  videoContainer.innerHTML = data.detail || "No video found for this segment.";
