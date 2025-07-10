@@ -646,7 +646,7 @@
 
  async function getVideoForSegment(popup, segment) {
  const source = segment.lane.startsWith("L") ? "L2" : "R2";
- const apiUrl = 'https://aj-mysterious-possess-industrial.trycloudflare.com/trim';
+ const apiUrl = 'http://16.171.150.111:8000/trim';
  const videoContainer = popup.getElement().querySelector('.video-container');
 
  try {
